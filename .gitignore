@@ -1,16 +1,17 @@
-# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+# Root-level ignores (for both frontend & backend)
 
-# dependencies
+# Node modules (both frontend and backend)
 node_modules/
+**/node_modules/
 
 # Expo
-.expo/
-dist/
-web-build/
-expo-env.d.ts
+**/.expo/
+**/dist/
+**/web-build/
+**/expo-env.d.ts
 
 # Native
-.kotlin/
+**/.kotlin/
 *.orig.*
 *.jks
 *.p8
@@ -19,21 +20,30 @@ expo-env.d.ts
 *.mobileprovision
 
 # Metro
-.metro-health-check*
+**/.metro-health-check*
 
-# debug
+# Logs & debug
 npm-debug.*
 yarn-debug.*
 yarn-error.*
 
 # macOS
 .DS_Store
-*.pem
 
-# local env files
+# Env files
+.env
 .env*.local
 
-# typescript
+# TypeScript
 *.tsbuildinfo
 
+# Others
+*.pem
 app-example
+
+# Optional for Lottie cache (if any)
+**/lottie-cache/
+
+# Optional: Ignore IDE/workspace settings
+.vscode/
+.idea/
