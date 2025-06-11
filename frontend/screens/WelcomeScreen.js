@@ -37,7 +37,9 @@ export default function HomeScreen() {
       {/* Grid */}
       <View className="flex-row flex-wrap justify-between px-5">
         {/* 1. Mental Check-In */}
-        <TouchableOpacity className="mb-6 h-52 w-[48%] items-center justify-center rounded-3xl bg-yellow-100 shadow">
+        <TouchableOpacity
+          onPress={() => navigation.navigate('MentalCheckIn')}
+          className="mb-6 h-52 w-[48%] items-center justify-center rounded-3xl bg-yellow-100 shadow">
           <LottieView
             source={require('../assets/lottie/bird.json')}
             autoPlay
@@ -52,7 +54,9 @@ export default function HomeScreen() {
         </TouchableOpacity>
 
         {/* 2. Emotion Analyzer */}
-        <TouchableOpacity className="mb-6 h-52 w-[48%] items-center justify-center rounded-3xl bg-sky-100 shadow">
+        <TouchableOpacity
+          onPress={() => navigation.navigate('WeeklySummary')}
+          className="mb-6 h-52 w-[48%] items-center justify-center rounded-3xl bg-sky-100 shadow">
           <Image
             // source={require('../assets/icons/emotion.png')}
             style={{ width: 70, height: 70 }}
@@ -61,7 +65,7 @@ export default function HomeScreen() {
           <Text
             className="mt-2 text-center text-base text-slate-800"
             style={{ fontFamily: 'QuicksandBold' }}>
-            Emotion Analyzer
+            Weekly Summary
           </Text>
         </TouchableOpacity>
 

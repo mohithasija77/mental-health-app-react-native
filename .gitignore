@@ -47,3 +47,7 @@ app-example
 # Optional: Ignore IDE/workspace settings
 .vscode/
 .idea/
+
+
+# API configuration (contains sensitive URLs)
+constants/api.js
