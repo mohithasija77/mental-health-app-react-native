@@ -50,4 +50,4 @@ app-example
 
 
 # API configuration (contains sensitive URLs)
-constants/api.js
+frontend/constants/api.js
