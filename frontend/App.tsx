@@ -10,6 +10,8 @@ import SignUpScreen from './screens/SignUpScreen';
 import WelcomeScreen from './screens/WelcomeScreen';
 
 import MentalCheckInScreen from 'screens/MentalCheckInScreen';
+import MentalHealthFacts from 'screens/MentalHealthFactsScreen';
+import StressDetectorScreen from 'screens/StressDetectorScreen';
 import WeeklySummaryScreen from 'screens/WeeklySummaryScreen';
 import './global.css';
 
@@ -29,6 +31,8 @@ export default function App() {
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="MentalCheckIn" component={MentalCheckInScreen} />
         <Stack.Screen name="WeeklySummary" component={WeeklySummaryScreen} />
+        <Stack.Screen name="MentalHealthFacts" component={MentalHealthFacts} />
+        <Stack.Screen name="StressDetector" component={StressDetectorScreen} />
       </Stack.Navigator>
       <StatusBar style="dark" />
     </NavigationContainer>

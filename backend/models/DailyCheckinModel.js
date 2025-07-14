@@ -39,6 +39,12 @@ const dailyCheckinSchema = new mongoose.Schema(
         'overwhelmed',
         'grateful',
         'frustrated',
+        'stressed',
+        'energetic',
+        'relaxed',
+        'tired',
+        'joyful',
+        'optimistic',
       ],
     },
     sleepQuality: {
@@ -58,6 +64,10 @@ const dailyCheckinSchema = new mongoose.Schema(
         type: String,
       },
     ],
+    recentEvents: {
+      type: String,
+      maxlength: 500,
+    },
     notes: {
       type: String,
       maxlength: 500,

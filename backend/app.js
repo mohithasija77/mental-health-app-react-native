@@ -46,10 +46,12 @@ mongoose
 // Import routes
 const checkinRoutes = require('./routes/checkinRoutes');
 const weeklySummaryRoutes = require('./routes/weeklySummaryRoutes');
+const stressRoutes = require('./routes/stressRoutes');
 
 // Routes
 app.use('/api/mental-health', checkinRoutes);
 app.use('/api/mental-health/summary', weeklySummaryRoutes);
+app.use('/api/mental-health/stress', stressRoutes);
 
 // Error handling middleware
 app.use((error, req, res, next) => {

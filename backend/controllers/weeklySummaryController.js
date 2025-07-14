@@ -107,44 +107,83 @@ const weeklySummaryController = {
   // Generate weekly mental health summary
   generateWeeklySummary: async (req, res) => {
     try {
-      const { userId } = req.body;
-      console.log(req.body);
+      const { userId, weekStartDate } = req.body;
 
-      if (!userId) {
+      if (!userId || !weekStartDate) {
         return res.status(400).json({
           success: false,
-          error: 'userId is required',
+          error: 'userId and weekStartDate are required',
         });
       }
 
-      // Get the last 7 daily check-ins from MongoDB (or all available)
+      // Step 1: check if already exists
+      let existingSummary = await WeeklySummary.findOne({
+        userId,
+        weekStartDate: new Date(weekStartDate),
+      });
+
+      if (existingSummary) {
+        console.log('✅ Returning existing weekly summary from DB');
+        return res.json({
+          success: true,
+          weeklySummary: {
+            ...existingSummary.summary,
+            timestamp: existingSummary.lastUpdated,
+          },
+        });
+      }
+
+      // Step 2: compute new
+      const startOfWeek = new Date(weekStartDate);
+      startOfWeek.setHours(0, 0, 0, 0);
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(endOfWeek.getDate() + 6);
+      endOfWeek.setHours(23, 59, 59, 999);
+
+      console.log('Fetching data from:', startOfWeek, 'to', endOfWeek);
+
       const weeklyData = await DailyCheckinModel.find({
         userId,
-      })
-        .sort({ createdAt: -1 }) // Sort by most recent first
-        .limit(7); // Get last 7 entries
+        createdAt: { $gte: startOfWeek, $lte: endOfWeek },
+      }).sort({ createdAt: 1 });
 
       if (weeklyData.length === 0) {
-        return res.status(400).json({
-          success: false,
-          error: 'No data found for this user',
+        // save empty summary too, so next request doesn't recalculate
+        const emptySummary = {
+          period: {
+            totalDays: 0,
+            startDate: startOfWeek,
+            endDate: endOfWeek,
+            dataRange: 'No check-ins in this week',
+          },
+          averages: {},
+          trends: {},
+          insights: {
+            aiSummary: 'No data this week to generate insights.',
+            keyPatterns: [],
+            recommendations: [],
+          },
+        };
+
+        return res.json({
+          success: true,
+          weeklySummary: {
+            ...emptySummary,
+            timestamp: new Date().toISOString(),
+          },
         });
       }
 
-      // Reverse to get chronological order for analysis
-      weeklyData.reverse();
-
-      // Calculate weekly analytics
+      // compute analytics
       const analytics = calculateWeeklyAnalytics(weeklyData);
-
-      // Generate AI insights
       const aiInsights = await generateWeeklyAIInsights(weeklyData, analytics);
 
-      // Prepare summary object
       const summaryData = {
         period: {
           totalDays: weeklyData.length,
-          dataRange: `${weeklyData.length} most recent check-ins`,
+          dataRange: `${weeklyData.length} check-ins`,
+          startDate: startOfWeek,
+          endDate: endOfWeek,
         },
         averages: {
           wellnessScore: analytics.avgWellnessScore,
@@ -165,27 +204,22 @@ const weeklySummaryController = {
         },
       };
 
-      // Save or update weekly summary (using userId as identifier)
-      const weeklySummary = await WeeklySummary.findOneAndUpdate(
-        { userId },
-        {
+      // save
+      if (dailyCheckinIds.length > 0) {
+        const saved = await WeeklySummary.create({
+          userId,
+          weekStartDate: startOfWeek,
+          weekEndDate: endOfWeek,
           summary: summaryData,
-          dailyCheckinIds: weeklyData.map((day) => day._id),
+          dailyCheckinIds: weeklyData.map((d) => d._id),
           lastUpdated: new Date(),
-        },
-        { upsert: true, new: true }
-      );
+        });
 
-      // Prepare response
-      const response = {
-        success: true,
-        weeklySummary: {
-          ...summaryData,
-          timestamp: new Date().toISOString(),
-        },
-      };
-
-      res.json(response);
+        return res.json({
+          success: true,
+          weeklySummary: { ...summaryData, timestamp: saved.lastUpdated },
+        });
+      }
     } catch (error) {
       console.error('Error generating weekly summary:', error);
       res.status(500).json({
@@ -195,6 +229,7 @@ const weeklySummaryController = {
       });
     }
   },
+
   // Quick mood check endpoint
   quickMoodCheck: async (req, res) => {
     try {
@@ -372,36 +407,30 @@ function calculateWeeklyAnalytics(weeklyData) {
 async function generateWeeklyAIInsights(weeklyData, analytics) {
   try {
     const prompt = `
-Analyze this weekly mental health data and provide compassionate, actionable insights:
+    Analyze this weekly mental health data and summarize only key trends and patterns in ~50 words.
+    
+    Weekly Overview:
+    - Average wellness score: ${analytics.avgWellnessScore}/10
+    - Average feeling scale: ${analytics.avgFeelingScale}/10
+    - Average sleep quality: ${analytics.avgSleepQuality}/10
+    - Average stress level: ${analytics.avgStressLevel}/10
+    - Wellness trend: ${analytics.wellnessScoreTrend}
+    - Most common moods: ${Object.keys(analytics.moodFrequency).join(', ')}
+    
+    Daily Data:
+    ${weeklyData
+      .map(
+        (day, index) =>
+          `Day ${index + 1}: Wellness ${day.wellnessScore}/10, Mood: ${
+            day.mood
+          }, Sleep: ${day.sleepQuality}/10, Stress: ${day.stressLevel}/10`
+      )
+      .join('\n')}
+    
+    Exclude recommendations or motivational text. Focus only on noticeable patterns and trends.
+    `;
 
-Weekly Overview:
-- Average wellness score: ${analytics.avgWellnessScore}/10
-- Average feeling scale: ${analytics.avgFeelingScale}/10
-- Average sleep quality: ${analytics.avgSleepQuality}/10
-- Average stress level: ${analytics.avgStressLevel}/10
-- Wellness trend: ${analytics.wellnessScoreTrend}
-- Most common moods: ${Object.keys(analytics.moodFrequency).join(', ')}
-
-Daily Data:
-${weeklyData
-  .map(
-    (day, index) =>
-      `Day ${index + 1}: Wellness ${day.wellnessScore}/10, Mood: ${
-        day.mood
-      }, Sleep: ${day.sleepQuality}/10, Stress: ${day.stressLevel}/10`
-  )
-  .join('\n')}
-
-Provide:
-1. A warm acknowledgment of their week
-2. 2-3 key insights about patterns
-3. 2-3 specific, actionable recommendations
-4. Encouragement and positive reinforcement
-
-Keep response supportive and around 200 words.
-`;
-
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
     const result = await model.generateContent(prompt);
     const response = await result.response;
 

@@ -1,4 +1,3 @@
-import { getApiUrl } from 'constants/api';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -15,7 +14,11 @@ import Icon from 'react-native-vector-icons/Feather';
 const WeeklySummaryScreen = ({ userId = 'test-user-123' }) => {
   const [weeklySummary, setWeeklySummary] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [selectedWeek, setSelectedWeek] = useState(new Date());
+  const today = new Date();
+  const firstDayOfWeek = new Date(today);
+  firstDayOfWeek.setDate(today.getDate() - today.getDay()); // Sunday start
+  firstDayOfWeek.setHours(0, 0, 0, 0);
+  const [selectedWeekStart, setSelectedWeekStart] = useState(firstDayOfWeek);
 
   const screenWidth = Dimensions.get('window').width;
   const chartConfig = {
@@ -35,25 +38,36 @@ const WeeklySummaryScreen = ({ userId = 'test-user-123' }) => {
     },
   };
 
-  const generateWeeklySummary = async () => {
+  const endDate = selectedWeekStart
+    ? new Date(selectedWeekStart.getTime() + 6 * 24 * 60 * 60 * 1000)
+    : null;
+
+  // Helper function to check if week has data
+  const hasData = weeklySummary && weeklySummary.period && weeklySummary.period.totalDays > 0;
+
+  const generateWeeklySummary = async (weekStart = selectedWeekStart) => {
     setLoading(true);
 
     try {
       console.log('Making request with userId:', userId);
 
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-      const response = await fetch(getApiUrl('WEEKLY_SUMMARY'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId,
-        }),
-        signal: controller.signal,
-      });
+      const response = await fetch(
+        'http://172.16.3.162:5003/api/mental-health/summary/weekly-summary',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId,
+            weekStartDate: weekStart.toISOString(),
+          }),
+          signal: controller.signal,
+        }
+      );
 
       clearTimeout(timeoutId);
 
@@ -90,27 +104,27 @@ const WeeklySummaryScreen = ({ userId = 'test-user-123' }) => {
     setLoading(false);
   };
 
-  // Remove the selectedWeek dependency since we're not using dates anymore
   useEffect(() => {
-    generateWeeklySummary();
-  }, []); // Empty dependency array - only runs once when component mounts
-
-  // Or if you want to refresh when userId changes:
-  // useEffect(() => {
-  //   generateWeeklySummary();
-  // }, [userId]);
+    if (selectedWeekStart) {
+      generateWeeklySummary(selectedWeekStart);
+    }
+  }, [selectedWeekStart]);
 
   const navigateWeek = (direction) => {
-    const newDate = new Date(selectedWeek);
+    const newDate = new Date(selectedWeekStart);
     newDate.setDate(newDate.getDate() + direction * 7);
-    setSelectedWeek(newDate);
+    newDate.setHours(0, 0, 0, 0);
+
+    setSelectedWeekStart(newDate);
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
+  const formatDate = (date) => {
+    if (!date || isNaN(date)) return '';
+    return new Intl.DateTimeFormat('en-GB', {
       day: 'numeric',
-    });
+      month: 'short',
+      year: 'numeric',
+    }).format(date);
   };
 
   const getTrendIcon = (trend) => {
@@ -126,17 +140,24 @@ const WeeklySummaryScreen = ({ userId = 'test-user-123' }) => {
 
   const getMoodColor = (mood) => {
     const moodColors = {
-      happy: '#fbbf24',
-      excited: '#f59e0b',
-      calm: '#10b981',
-      grateful: '#8b5cf6',
-      hopeful: '#06b6d4',
-      sad: '#6b7280',
-      anxious: '#f97316',
-      overwhelmed: '#ef4444',
-      frustrated: '#dc2626',
-      angry: '#991b1b',
+      happy: '#fbbf24', // yellow
+      excited: '#f59e0b', // orange
+      calm: '#10b981', // green
+      grateful: '#8b5cf6', // violet
+      hopeful: '#06b6d4', // cyan
+      sad: '#6b7280', // gray
+      anxious: '#f97316', // deep orange
+      overwhelmed: '#ef4444', // red
+      frustrated: '#dc2626', // darker red
+      angry: '#991b1b', // darkest red
+      stressed: '#e11d48', // rose
+      energetic: '#22c55e', // bright green
+      relaxed: '#3b82f6', // blue
+      tired: '#a3a3a3', // medium gray (neutral, low energy)
+      joyful: '#fde68a', // soft pastel yellow (warm, uplifting)
+      optimistic: '#38bdf8', // sky blue (fresh, forward-looking)
     };
+
     return moodColors[mood] || '#6b7280';
   };
 
@@ -177,215 +198,290 @@ const WeeklySummaryScreen = ({ userId = 'test-user-123' }) => {
   }
 
   return (
-    <ScrollView className="flex-1 bg-gray-50">
+    <View className="flex-1 bg-gray-50">
       {/* Header */}
-      <View className="bg-white px-6 py-4 shadow-sm">
-        <View className="flex-row items-center justify-between">
-          <TouchableOpacity onPress={() => navigateWeek(-1)}>
+      <View className=" bg-white px-4 pb-4 pt-12 shadow-sm">
+        <View className="mt-2 flex-row items-center">
+          <TouchableOpacity
+            onPress={() => navigateWeek(-1)}
+            className="rounded-lg p-2"
+            style={{ width: 44, height: 44 }}>
             <Icon name="chevron-left" size={24} color="#6b7280" />
           </TouchableOpacity>
 
-          <View className="items-center">
-            <Text className="text-lg font-semibold text-gray-900">Weekly Summary</Text>
-            {weeklySummary && (
-              <Text className="text-sm text-gray-500">
-                {formatDate(weeklySummary.period.startDate)} -{' '}
-                {formatDate(weeklySummary.period.endDate)}
-              </Text>
+          <View className="mx-2 mt-4 flex-1 items-center">
+            <Text className="text-center text-lg font-semibold text-gray-900">Weekly Summary</Text>
+            {selectedWeekStart && endDate && (
+              <View className="mt-1 px-2">
+                <Text
+                  className="text-center text-sm text-gray-500"
+                  numberOfLines={1}
+                  adjustsFontSizeToFit={true}
+                  minimumFontScale={0.7}>
+                  {formatDate(selectedWeekStart)} - {formatDate(endDate)}
+                </Text>
+              </View>
             )}
           </View>
 
-          <TouchableOpacity onPress={() => navigateWeek(1)}>
+          <TouchableOpacity
+            onPress={() => navigateWeek(1)}
+            className="rounded-lg p-2"
+            style={{ width: 44, height: 44 }}>
             <Icon name="chevron-right" size={24} color="#6b7280" />
           </TouchableOpacity>
         </View>
       </View>
 
-      {weeklySummary ? (
-        <View className="px-6 py-4">
-          {/* Key Metrics */}
-          <View className="mb-6 rounded-xl bg-white p-6 shadow-sm">
-            <Text className="mb-4 text-lg font-semibold text-gray-900">This Week's Overview</Text>
-
-            <View className="-mx-2 flex-row flex-wrap">
-              <View className="mb-4 w-1/2 px-2">
-                <View className="rounded-lg bg-blue-50 p-3">
-                  <Text className="text-sm font-medium text-blue-600">Wellness Score</Text>
-                  <Text className="text-2xl font-bold text-blue-700">
-                    {weeklySummary.averages.wellnessScore}/10
+      <ScrollView className="flex-1">
+        {weeklySummary ? (
+          <View className="px-4 py-4">
+            {/* Conditional rendering based on whether there's data */}
+            {hasData ? (
+              <>
+                {/* Key Metrics - Only show if there's data */}
+                <View className="mb-6 rounded-xl bg-white p-4 shadow-sm">
+                  <Text className="mb-4 text-lg font-semibold text-gray-900">
+                    This Week's Overview
                   </Text>
+
+                  <View className="-mx-1 flex-row flex-wrap">
+                    {/* Wellness Score */}
+                    <View className="mb-3 w-1/2 px-1">
+                      <View className="rounded-lg bg-blue-50 p-3">
+                        <Text className="mb-1 text-xs font-medium text-blue-600">
+                          Wellness Score
+                        </Text>
+                        <Text className="text-xl font-bold text-blue-700">
+                          {weeklySummary.averages?.wellnessScore || 0}/10
+                        </Text>
+                      </View>
+                    </View>
+
+                    {/* Sleep Quality */}
+                    <View className="mb-3 w-1/2 px-1">
+                      <View className="rounded-lg bg-green-50 p-3">
+                        <Text className="mb-1 text-xs font-medium text-green-600">
+                          Sleep Quality
+                        </Text>
+                        <Text className="text-xl font-bold text-green-700">
+                          {weeklySummary.averages?.sleepQuality || 0}/10
+                        </Text>
+                      </View>
+                    </View>
+
+                    {/* Feeling Scale */}
+                    <View className="mb-3 w-1/2 px-1">
+                      <View className="rounded-lg bg-purple-50 p-3">
+                        <Text className="mb-1 text-xs font-medium text-purple-600">
+                          Feeling Scale
+                        </Text>
+                        <Text className="text-xl font-bold text-purple-700">
+                          {weeklySummary.averages?.feelingScale || 0}/10
+                        </Text>
+                      </View>
+                    </View>
+
+                    {/* Stress Level */}
+                    <View className="mb-3 w-1/2 px-1">
+                      <View className="rounded-lg bg-orange-50 p-3">
+                        <Text className="mb-1 text-xs font-medium text-orange-600">
+                          Stress Level
+                        </Text>
+                        <Text className="text-xl font-bold text-orange-700">
+                          {weeklySummary.averages?.stressLevel || 0}/10
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  {/* Trend - Only show if trend exists */}
+                  {weeklySummary.trends?.wellnessScoreTrend && (
+                    <View className="mt-3 flex-row items-center">
+                      <Icon
+                        name={getTrendIcon(weeklySummary.trends.wellnessScoreTrend).name}
+                        size={20}
+                        color={getTrendIcon(weeklySummary.trends.wellnessScoreTrend).color}
+                      />
+                      <Text className="ml-2 flex-1 capitalize text-gray-600" numberOfLines={1}>
+                        Wellness trend: {weeklySummary.trends.wellnessScoreTrend}
+                      </Text>
+                    </View>
+                  )}
                 </View>
+
+                {/* Mood Distribution - Only show if mood data exists */}
+                {weeklySummary.trends?.moodFrequency &&
+                  Object.keys(weeklySummary.trends.moodFrequency).length > 0 && (
+                    <View className="mb-6 rounded-xl bg-white p-4 shadow-sm">
+                      <Text className="mb-4 text-lg font-semibold text-gray-900">
+                        Mood Distribution
+                      </Text>
+                      <View className="min-h-[200px]">{renderMoodChart()}</View>
+                    </View>
+                  )}
+
+                {/* Week Highlights - Only show if best/challenging day data exists */}
+                {(weeklySummary.trends?.bestDay || weeklySummary.trends?.challengingDay) && (
+                  <View className="mb-6 rounded-xl bg-white p-4 shadow-sm">
+                    <Text className="mb-4 text-lg font-semibold text-gray-900">
+                      Week Highlights
+                    </Text>
+
+                    {/* Best Day */}
+                    {weeklySummary.trends?.bestDay && (
+                      <View className="mb-4">
+                        <View className="mb-2 flex-row items-center">
+                          <Icon name="sun" size={16} color="#10b981" />
+                          <Text className="ml-2 text-sm font-medium text-green-600">Best Day</Text>
+                        </View>
+                        <Text className="leading-5 text-gray-700">
+                          {formatDate(new Date(weeklySummary.trends.bestDay.date))} - Wellness
+                          Score: {weeklySummary.trends.bestDay.wellnessScore}/10
+                        </Text>
+                        <Text className="mt-1 text-sm text-gray-500">
+                          Mood: {weeklySummary.trends.bestDay.mood}
+                        </Text>
+                      </View>
+                    )}
+
+                    {/* Challenging Day */}
+                    {weeklySummary.trends?.challengingDay && (
+                      <View>
+                        <View className="mb-2 flex-row items-center">
+                          <Icon name="cloud" size={16} color="#f97316" />
+                          <Text className="ml-2 flex-1 text-sm font-medium text-orange-600">
+                            Most Challenging Day
+                          </Text>
+                        </View>
+                        <Text className="leading-5 text-gray-700">
+                          {formatDate(new Date(weeklySummary.trends.challengingDay.date))} -
+                          Wellness Score: {weeklySummary.trends.challengingDay.wellnessScore}/10
+                        </Text>
+                        <Text className="mt-1 text-sm text-gray-500">
+                          Mood: {weeklySummary.trends.challengingDay.mood}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                )}
+              </>
+            ) : (
+              /* No Data State */
+              <View className="flex-1 items-center justify-center px-6 py-12">
+                <Icon name="calendar" size={64} color="#d1d5db" />
+                <Text className="mt-4 text-center text-xl font-semibold text-gray-400">
+                  No Data Available
+                </Text>
+                <Text className="mt-2 text-center leading-6 text-gray-500">
+                  {weeklySummary.period?.dataRange || 'No check-ins for this week'}
+                </Text>
+                <TouchableOpacity
+                  className="mt-6 rounded-lg bg-blue-600 px-6 py-3"
+                  onPress={() => {
+                    /* Navigate to daily check-in */
+                  }}>
+                  <Text className="font-semibold text-white">Start Daily Check-in</Text>
+                </TouchableOpacity>
               </View>
+            )}
 
-              <View className="mb-4 w-1/2 px-2">
-                <View className="rounded-lg bg-green-50 p-3">
-                  <Text className="text-sm font-medium text-green-600">Sleep Quality</Text>
-                  <Text className="text-2xl font-bold text-green-700">
-                    {weeklySummary.averages.sleepQuality}/10
-                  </Text>
-                </View>
-              </View>
-
-              <View className="mb-4 w-1/2 px-2">
-                <View className="rounded-lg bg-purple-50 p-3">
-                  <Text className="text-sm font-medium text-purple-600">Feeling Scale</Text>
-                  <Text className="text-2xl font-bold text-purple-700">
-                    {weeklySummary.averages.feelingScale}/10
-                  </Text>
-                </View>
-              </View>
-
-              <View className="mb-4 w-1/2 px-2">
-                <View className="rounded-lg bg-orange-50 p-3">
-                  <Text className="text-sm font-medium text-orange-600">Stress Level</Text>
-                  <Text className="text-2xl font-bold text-orange-700">
-                    {weeklySummary.averages.stressLevel}/10
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Trend Indicator */}
-            <View className="mt-4 flex-row items-center">
-              <Icon
-                name={getTrendIcon(weeklySummary.trends.wellnessScoreTrend).name}
-                size={20}
-                color={getTrendIcon(weeklySummary.trends.wellnessScoreTrend).color}
-              />
-              <Text className="ml-2 capitalize text-gray-600">
-                Wellness trend: {weeklySummary.trends.wellnessScoreTrend}
-              </Text>
-            </View>
-          </View>
-
-          {/* AI Insights */}
-          <View className="mb-6 rounded-xl bg-white p-6 shadow-sm">
-            <View className="mb-4 flex-row items-center">
-              <Icon name="brain" size={20} color="#6366f1" />
-              <Text className="ml-2 text-lg font-semibold text-gray-900">AI Insights</Text>
-            </View>
-            <Text className="leading-6 text-gray-700">{weeklySummary.insights.aiSummary}</Text>
-          </View>
-
-          {/* Mood Distribution */}
-          <View className="mb-6 rounded-xl bg-white p-6 shadow-sm">
-            <Text className="mb-4 text-lg font-semibold text-gray-900">Mood Distribution</Text>
-            {renderMoodChart()}
-          </View>
-
-          {/* Key Patterns */}
-          {weeklySummary.insights.keyPatterns && weeklySummary.insights.keyPatterns.length > 0 && (
-            <View className="mb-6 rounded-xl bg-white p-6 shadow-sm">
-              <View className="mb-4 flex-row items-center">
-                <Icon name="eye" size={20} color="#10b981" />
-                <Text className="ml-2 text-lg font-semibold text-gray-900">Key Patterns</Text>
-              </View>
-              {weeklySummary.insights.keyPatterns.map((pattern, index) => (
-                <View key={index} className="mb-2 flex-row items-start">
-                  <View className="mr-3 mt-2 h-2 w-2 rounded-full bg-green-500" />
-                  <Text className="flex-1 text-gray-700">{pattern}</Text>
-                </View>
-              ))}
-            </View>
-          )}
-
-          {/* Recommendations */}
-          {weeklySummary.insights.recommendations &&
-            weeklySummary.insights.recommendations.length > 0 && (
-              <View className="mb-6 rounded-xl bg-white p-6 shadow-sm">
+            {/* AI Insights - Always show if available */}
+            {weeklySummary.insights?.aiSummary && (
+              <View className="mb-6 rounded-xl bg-white p-4 shadow-sm">
                 <View className="mb-4 flex-row items-center">
-                  <Icon name="lightbulb" size={20} color="#f59e0b" />
-                  <Text className="ml-2 text-lg font-semibold text-gray-900">Recommendations</Text>
+                  <Icon name="brain" size={20} color="#6366f1" />
+                  <Text className="ml-2 flex-1 text-lg font-semibold text-gray-900">
+                    AI Insights
+                  </Text>
                 </View>
-                {weeklySummary.insights.recommendations.map((recommendation, index) => (
-                  <View key={index} className="mb-3 flex-row items-start">
-                    <View className="mr-3 mt-2 h-2 w-2 rounded-full bg-yellow-500" />
-                    <Text className="flex-1 text-gray-700">{recommendation}</Text>
+                <Text className="leading-6 text-gray-700">{weeklySummary.insights.aiSummary}</Text>
+              </View>
+            )}
+
+            {/* Key Patterns - Only show if patterns exist */}
+            {weeklySummary.insights?.keyPatterns?.length > 0 && (
+              <View className="mb-6 rounded-xl bg-white p-4 shadow-sm">
+                <View className="mb-4 flex-row items-center">
+                  <Icon name="eye" size={20} color="#10b981" />
+                  <Text className="ml-2 flex-1 text-lg font-semibold text-gray-900">
+                    Key Patterns
+                  </Text>
+                </View>
+                {weeklySummary.insights.keyPatterns.map((pattern, idx) => (
+                  <View key={idx} className="mb-2 flex-row items-start">
+                    <View className="mr-3 mt-2 h-2 w-2 flex-shrink-0 rounded-full bg-green-500" />
+                    <Text className="flex-1 leading-5 text-gray-700">{pattern}</Text>
                   </View>
                 ))}
               </View>
             )}
 
-          {/* Best & Challenging Days */}
-          <View className="mb-6 rounded-xl bg-white p-6 shadow-sm">
-            <Text className="mb-4 text-lg font-semibold text-gray-900">Week Highlights</Text>
-
-            <View className="mb-4">
-              <View className="mb-2 flex-row items-center">
-                <Icon name="sun" size={16} color="#10b981" />
-                <Text className="ml-2 text-sm font-medium text-green-600">Best Day</Text>
+            {/* Recommendations - Only show if recommendations exist */}
+            {weeklySummary.insights?.recommendations?.length > 0 && (
+              <View className="mb-6 rounded-xl bg-white p-4 shadow-sm">
+                <View className="mb-4 flex-row items-center">
+                  <Icon name="lightbulb" size={20} color="#f59e0b" />
+                  <Text className="ml-2 flex-1 text-lg font-semibold text-gray-900">
+                    Recommendations
+                  </Text>
+                </View>
+                {weeklySummary.insights.recommendations.map((rec, idx) => (
+                  <View key={idx} className="mb-3 flex-row items-start">
+                    <View className="mr-3 mt-2 h-2 w-2 flex-shrink-0 rounded-full bg-yellow-500" />
+                    <Text className="flex-1 leading-5 text-gray-700">{rec}</Text>
+                  </View>
+                ))}
               </View>
-              <Text className="text-gray-700">
-                {formatDate(weeklySummary.trends.bestDay.date)} - Wellness Score:{' '}
-                {weeklySummary.trends.bestDay.wellnessScore}/10
-              </Text>
-              <Text className="mt-1 text-sm text-gray-500">
-                Mood: {weeklySummary.trends.bestDay.mood}
-              </Text>
-            </View>
+            )}
 
-            <View>
-              <View className="mb-2 flex-row items-center">
-                <Icon name="cloud" size={16} color="#f97316" />
-                <Text className="ml-2 text-sm font-medium text-orange-600">
-                  Most Challenging Day
-                </Text>
-              </View>
-              <Text className="text-gray-700">
-                {formatDate(weeklySummary.trends.challengingDay.date)} - Wellness Score:{' '}
-                {weeklySummary.trends.challengingDay.wellnessScore}/10
-              </Text>
-              <Text className="mt-1 text-sm text-gray-500">
-                Mood: {weeklySummary.trends.challengingDay.mood}
-              </Text>
+            {/* Take Action - Always show */}
+            <View className="mb-6 rounded-xl bg-white p-4 shadow-sm">
+              <Text className="mb-4 text-lg font-semibold text-gray-900">Take Action</Text>
+              <TouchableOpacity className="mb-3 rounded-lg bg-blue-600 p-4">
+                <View className="flex-row items-center justify-center">
+                  <Icon name="plus" size={20} color="white" />
+                  <Text className="ml-2 text-center font-semibold text-white">
+                    Add Today's Check-in
+                  </Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity className="mb-3 rounded-lg bg-green-600 p-4">
+                <View className="flex-row items-center justify-center">
+                  <Icon name="share" size={20} color="white" />
+                  <Text className="ml-2 text-center font-semibold text-white">Share Summary</Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity className="rounded-lg bg-purple-600 p-4">
+                <View className="flex-row items-center justify-center">
+                  <Icon name="download" size={20} color="white" />
+                  <Text className="ml-2 text-center font-semibold text-white">Export Data</Text>
+                </View>
+              </TouchableOpacity>
             </View>
           </View>
-
-          {/* Actions */}
-          <View className="mb-6 rounded-xl bg-white p-6 shadow-sm">
-            <Text className="mb-4 text-lg font-semibold text-gray-900">Take Action</Text>
-
-            <TouchableOpacity className="mb-3 rounded-lg bg-blue-600 p-4">
-              <View className="flex-row items-center justify-center">
-                <Icon name="plus" size={20} color="white" />
-                <Text className="ml-2 font-semibold text-white">Add Today's Check-in</Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity className="mb-3 rounded-lg bg-green-600 p-4">
-              <View className="flex-row items-center justify-center">
-                <Icon name="share" size={20} color="white" />
-                <Text className="ml-2 font-semibold text-white">Share Summary</Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity className="rounded-lg bg-purple-600 p-4">
-              <View className="flex-row items-center justify-center">
-                <Icon name="download" size={20} color="white" />
-                <Text className="ml-2 font-semibold text-white">Export Data</Text>
-              </View>
+        ) : (
+          <View className="flex-1 items-center justify-center px-6 py-12">
+            <Icon name="calendar" size={64} color="#d1d5db" />
+            <Text className="mt-4 text-center text-xl font-semibold text-gray-400">
+              No Data Available
+            </Text>
+            <Text className="mt-2 text-center leading-6 text-gray-500">
+              Complete daily check-ins to generate your weekly summary
+            </Text>
+            <TouchableOpacity
+              className="mt-6 rounded-lg bg-blue-600 px-6 py-3"
+              onPress={() => {
+                /* Navigate to daily check-in */
+              }}>
+              <Text className="font-semibold text-white">Start Daily Check-in</Text>
             </TouchableOpacity>
           </View>
-        </View>
-      ) : (
-        <View className="flex-1 items-center justify-center px-6 py-12">
-          <Icon name="calendar" size={64} color="#d1d5db" />
-          <Text className="mt-4 text-center text-xl font-semibold text-gray-400">
-            No Data Available
-          </Text>
-          <Text className="mt-2 text-center text-gray-500">
-            Complete daily check-ins to generate your weekly summary
-          </Text>
-          <TouchableOpacity
-            className="mt-6 rounded-lg bg-blue-600 px-6 py-3"
-            onPress={() => {
-              /* Navigate to daily check-in */
-            }}>
-            <Text className="font-semibold text-white">Start Daily Check-in</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-    </ScrollView>
+        )}
+      </ScrollView>
+    </View>
   );
 };
 
