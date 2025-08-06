@@ -1,13 +1,41 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import LottieView from 'lottie-react-native';
+import { useEffect, useState } from 'react';
 import { Dimensions, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
 const { width, height } = Dimensions.get('window');
 
 export default function HomeScreen() {
+  const [userName, setUserName] = useState('');
+  const [loading, setLoading] = useState(true);
   const navigation = useNavigation();
+
+  const getUserName = async () => {
+    try {
+      const userData = await AsyncStorage.getItem('userData');
+      const user = userData ? JSON.parse(userData) : null;
+
+      if (user && user.name) {
+        // Extract first name from full name
+        const firstName = user.name.split(' ')[0];
+        setUserName(firstName);
+      } else {
+        setUserName('User'); // Fallback name
+      }
+    } catch (error) {
+      console.error('Error getting user name:', error);
+      setUserName('User'); // Fallback name
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    getUserName();
+  }, []);
 
   const [fontsLoaded] = useFonts({
     Quicksand: require('../assets/fonts/static/Quicksand-Regular.ttf'), // Add your font here
@@ -35,7 +63,7 @@ export default function HomeScreen() {
         {/* Header */}
         <View className="px-5 pb-8 pt-20">
           <Text className="text-2xl" style={{ fontFamily: 'QuicksandBold' }}>
-            Welcome, Mohit 👋
+            {loading ? 'Welcome 👋' : `Welcome, ${userName} 👋`}
           </Text>
           <Text className="mt-1 text-base text-slate-600" style={{ fontFamily: 'Quicksand' }}>
             Let's support your mind today.

@@ -1,7 +1,8 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Slider from '@react-native-community/slider';
 import { useNavigation } from '@react-navigation/native';
 import LottieView from 'lottie-react-native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   Dimensions,
@@ -28,6 +29,9 @@ export default function MentalCheckInScreen() {
   const [additionalNotes, setAdditionalNotes] = useState('');
   const [isOpen, setIsOpen] = useState(false);
 
+  const [hasCheckedInToday, setHasCheckedInToday] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
   const moodOptions = [
     'happy',
     'sad',
@@ -47,16 +51,77 @@ export default function MentalCheckInScreen() {
     'optimistic',
   ];
 
+  const checkTodaysCheckin = async () => {
+    try {
+      setIsLoading(true);
+
+      // Get user data from AsyncStorage
+      const userData = await AsyncStorage.getItem('userData');
+      const user = userData ? JSON.parse(userData) : null;
+
+      // Check for _id since your user object uses MongoDB's _id field
+      if (!user || !user._id) {
+        console.error('No authenticated user found');
+        console.log('User data:', user); // Debug log to see what's stored
+        setHasCheckedInToday(false);
+        return;
+      }
+
+      const response = await fetch(
+        `http://192.168.29.12:5003/api/mental-health/checkin/check-today/${user._id}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+        }
+      );
+
+      const data = await response.json();
+      console.log('Check-in response:', data); // Debug log
+
+      if (response.ok) {
+        setHasCheckedInToday(data.hasCheckedInToday || false);
+        console.log('Has checked in today:', data.hasCheckedInToday);
+      } else {
+        console.error('Check-in API error:', data);
+        setHasCheckedInToday(false);
+      }
+    } catch (error) {
+      console.error("Error checking today's checkin:", error);
+      setHasCheckedInToday(false);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // ✅ CHECK ON COMPONENT MOUNT
+  useEffect(() => {
+    checkTodaysCheckin();
+  }, []);
+
   const handleSelect = (selectedMood) => {
     setMood(selectedMood);
     setIsOpen(false);
   };
 
   const handleSubmit = async () => {
+    if (hasCheckedInToday) {
+      Alert.alert(
+        'Already Checked In',
+        "You've already submitted your check-in for today. Come back tomorrow!"
+      );
+      return;
+    }
+
     const testId = 'test-user-123'; // Replace with actual user ID
 
+    const userData = await AsyncStorage.getItem('userData');
+    const user = userData ? JSON.parse(userData) : null;
+
     const payload = {
-      userId: testId,
+      userId: user._id,
       feelingScale: feelingScale ?? 0,
       sleepQuality: sleepQuality ?? 0,
       stressLevel: stressLevel ?? 0,
@@ -66,7 +131,7 @@ export default function MentalCheckInScreen() {
     };
 
     try {
-      const response = await fetch('http://172.16.3.162:5003/api/mental-health/analyze', {
+      const response = await fetch('http://192.168.29.12:5003/api/mental-health/analyze', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -80,6 +145,8 @@ export default function MentalCheckInScreen() {
       if (response.ok && data.success && data.analysis) {
         console.log('✅ Success response:', data);
         const { analysis } = data;
+
+        setHasCheckedInToday(true);
 
         const message = `
   Daily Score: ${analysis.dataInsights.wellnessScore}/10
@@ -134,7 +201,7 @@ export default function MentalCheckInScreen() {
       }
     }
   };
-
+  console.log(hasCheckedInToday);
   return (
     <KeyboardAwareScrollView
       className="flex-1 bg-white"
@@ -291,8 +358,15 @@ export default function MentalCheckInScreen() {
         </View>
 
         {/* Submit Button */}
-        <TouchableOpacity onPress={handleSubmit} className="mb-4 rounded-full bg-indigo-600 py-4">
-          <Text className="text-center text-lg font-semibold text-white">Analyze My State</Text>
+        <TouchableOpacity
+          onPress={handleSubmit}
+          className={`mb-4 rounded-full py-4 ${
+            hasCheckedInToday ? 'bg-gray-400' : 'bg-indigo-600'
+          }`}
+          disabled={hasCheckedInToday || isLoading}>
+          <Text className="text-center text-lg font-semibold text-white">
+            {hasCheckedInToday ? 'Already Checked In Today' : 'Analyze My State'}
+          </Text>
         </TouchableOpacity>
 
         {/* Back */}

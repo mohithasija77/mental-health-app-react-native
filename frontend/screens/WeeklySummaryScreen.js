@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -11,9 +12,13 @@ import {
 import { PieChart } from 'react-native-chart-kit';
 import Icon from 'react-native-vector-icons/Feather';
 
-const WeeklySummaryScreen = ({ userId = 'test-user-123' }) => {
+const WeeklySummaryScreen = () => {
   const [weeklySummary, setWeeklySummary] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [hasCheckedInToday, setHasCheckedInToday] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [userId, setUserId] = useState(null);
+
   const today = new Date();
   const firstDayOfWeek = new Date(today);
   firstDayOfWeek.setDate(today.getDate() - today.getDay()); // Sunday start
@@ -45,24 +50,50 @@ const WeeklySummaryScreen = ({ userId = 'test-user-123' }) => {
   // Helper function to check if week has data
   const hasData = weeklySummary && weeklySummary.period && weeklySummary.period.totalDays > 0;
 
-  const generateWeeklySummary = async (weekStart = selectedWeekStart) => {
+  // Get user data from AsyncStorage
+  const getUserData = async () => {
+    try {
+      const userData = await AsyncStorage.getItem('userData');
+      const user = userData ? JSON.parse(userData) : null;
+
+      if (user && user._id) {
+        setUserId(user._id);
+        return user._id;
+      } else {
+        console.error('No authenticated user found');
+        Alert.alert('Error', 'Please log in to view your weekly summary');
+        return null;
+      }
+    } catch (error) {
+      console.error('Error getting user data:', error);
+      Alert.alert('Error', 'Failed to get user information');
+      return null;
+    }
+  };
+
+  const generateWeeklySummary = async (weekStart = selectedWeekStart, userIdParam = userId) => {
+    if (!userIdParam) {
+      console.error('No user ID available for weekly summary');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      console.log('Making request with userId:', userId);
+      console.log('Making request with userId:', userIdParam);
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000);
 
       const response = await fetch(
-        'http://172.16.3.162:5003/api/mental-health/summary/weekly-summary',
+        'http://192.168.29.12:5003/api/mental-health/summary/weekly-summary',
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            userId,
+            userId: userIdParam,
             weekStartDate: weekStart.toISOString(),
           }),
           signal: controller.signal,
@@ -89,7 +120,6 @@ const WeeklySummaryScreen = ({ userId = 'test-user-123' }) => {
         Alert.alert('Error', data.error || 'Failed to generate weekly summary');
       }
     } catch (error) {
-      clearTimeout(timeoutId);
       console.error('Error generating weekly summary:', error);
 
       if (error.name === 'AbortError') {
@@ -104,11 +134,70 @@ const WeeklySummaryScreen = ({ userId = 'test-user-123' }) => {
     setLoading(false);
   };
 
-  useEffect(() => {
-    if (selectedWeekStart) {
-      generateWeeklySummary(selectedWeekStart);
+  const checkTodaysCheckin = async () => {
+    try {
+      setIsLoading(true);
+
+      // Get user data from AsyncStorage
+      const userData = await AsyncStorage.getItem('userData');
+      const user = userData ? JSON.parse(userData) : null;
+
+      // Check for _id since your user object uses MongoDB's _id field
+      if (!user || !user._id) {
+        console.error('No authenticated user found');
+        console.log('User data:', user); // Debug log to see what's stored
+        setHasCheckedInToday(false);
+        return;
+      }
+
+      const response = await fetch(
+        `http://192.168.29.12:5003/api/mental-health/checkin/check-today/${user._id}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+        }
+      );
+
+      const data = await response.json();
+      console.log('Check-in response:', data); // Debug log
+
+      if (response.ok) {
+        setHasCheckedInToday(data.hasCheckedInToday || false);
+        console.log('Has checked in today:', data.hasCheckedInToday);
+      } else {
+        console.error('Check-in API error:', data);
+        setHasCheckedInToday(false);
+      }
+    } catch (error) {
+      console.error("Error checking today's checkin:", error);
+      setHasCheckedInToday(false);
+    } finally {
+      setIsLoading(false);
     }
-  }, [selectedWeekStart]);
+  };
+
+  useEffect(() => {
+    const initializeData = async () => {
+      const userIdFromStorage = await getUserData();
+      if (userIdFromStorage) {
+        await checkTodaysCheckin();
+        if (selectedWeekStart) {
+          await generateWeeklySummary(selectedWeekStart, userIdFromStorage);
+        }
+      }
+    };
+
+    initializeData();
+  }, []);
+
+  useEffect(() => {
+    if (userId && selectedWeekStart) {
+      generateWeeklySummary(selectedWeekStart, userId);
+    }
+  }, [selectedWeekStart, userId]);
 
   const navigateWeek = (direction) => {
     const newDate = new Date(selectedWeekStart);
@@ -187,6 +276,16 @@ const WeeklySummaryScreen = ({ userId = 'test-user-123' }) => {
       />
     );
   };
+
+  // Show loading state if no user ID is available yet
+  if (!userId && !loading) {
+    return (
+      <View className="flex-1 items-center justify-center bg-gray-50">
+        <ActivityIndicator size="large" color="#6366f1" />
+        <Text className="mt-4 text-gray-600">Loading user data...</Text>
+      </View>
+    );
+  }
 
   if (loading) {
     return (
@@ -438,14 +537,18 @@ const WeeklySummaryScreen = ({ userId = 'test-user-123' }) => {
             {/* Take Action - Always show */}
             <View className="mb-6 rounded-xl bg-white p-4 shadow-sm">
               <Text className="mb-4 text-lg font-semibold text-gray-900">Take Action</Text>
-              <TouchableOpacity className="mb-3 rounded-lg bg-blue-600 p-4">
-                <View className="flex-row items-center justify-center">
-                  <Icon name="plus" size={20} color="white" />
-                  <Text className="ml-2 text-center font-semibold text-white">
-                    Add Today's Check-in
-                  </Text>
-                </View>
-              </TouchableOpacity>
+              {!hasCheckedInToday ? (
+                <TouchableOpacity className="mb-3 rounded-lg bg-blue-600 p-4">
+                  <View className="flex-row items-center justify-center">
+                    <Icon name="plus" size={20} color="white" />
+                    <Text className="ml-2 text-center font-semibold text-white">
+                      Add Today's Check-in
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              ) : (
+                <></>
+              )}
 
               <TouchableOpacity className="mb-3 rounded-lg bg-green-600 p-4">
                 <View className="flex-row items-center justify-center">

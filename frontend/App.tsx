@@ -2,6 +2,7 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 // Import screens
 import HomeScreen from './screens/HomeScreen';
@@ -19,22 +20,26 @@ const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
-    <NavigationContainer>
-      <Stack.Navigator
-        initialRouteName="Welcome"
-        screenOptions={{
-          headerShown: false,
-        }}>
-        <Stack.Screen name="Welcome" component={WelcomeScreen} />
-        <Stack.Screen name="SignUp" component={SignUpScreen} />
-        <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="MentalCheckIn" component={MentalCheckInScreen} />
-        <Stack.Screen name="WeeklySummary" component={WeeklySummaryScreen} />
-        <Stack.Screen name="MentalHealthFacts" component={MentalHealthFacts} />
-        <Stack.Screen name="StressDetector" component={StressDetectorScreen} />
-      </Stack.Navigator>
-      <StatusBar style="dark" />
-    </NavigationContainer>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <NavigationContainer>
+        <Stack.Navigator
+          initialRouteName="Welcome"
+          screenOptions={{
+            headerShown: false,
+          }}>
+          <Stack.Screen name="Welcome" component={WelcomeScreen} />
+          <Stack.Screen name="SignUp" component={SignUpScreen} />
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="Home" component={HomeScreen} />
+          <Stack.Screen name="MentalCheckIn" component={MentalCheckInScreen} />
+          <Stack.Screen name="WeeklySummary" component={WeeklySummaryScreen} />
+
+          <Stack.Screen name="MentalHealthFacts" component={MentalHealthFacts} />
+
+          <Stack.Screen name="StressDetector" component={StressDetectorScreen} />
+        </Stack.Navigator>
+        <StatusBar style="dark" />
+      </NavigationContainer>
+    </GestureHandlerRootView>
   );
 }

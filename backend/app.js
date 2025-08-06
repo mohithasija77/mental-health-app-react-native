@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 require('dotenv').config();
+const cookieParser = require('cookie-parser');
+const morgan = require('morgan');
 
 const app = express();
 
@@ -47,11 +49,15 @@ mongoose
 const checkinRoutes = require('./routes/checkinRoutes');
 const weeklySummaryRoutes = require('./routes/weeklySummaryRoutes');
 const stressRoutes = require('./routes/stressRoutes');
+const checkinStatus = require('./routes/checkinStatusRoutes');
+const authRoutes = require('./routes/auth');
 
 // Routes
 app.use('/api/mental-health', checkinRoutes);
 app.use('/api/mental-health/summary', weeklySummaryRoutes);
 app.use('/api/mental-health/stress', stressRoutes);
+app.use('/api/mental-health/checkin', checkinStatus);
+app.use('/api/auth', authRoutes);
 
 // Error handling middleware
 app.use((error, req, res, next) => {
@@ -70,6 +76,8 @@ app.use((req, res) => {
   });
 });
 
+app.use(morgan('combined'));
+app.use(cookieParser());
 // Start server
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Mental Health Analysis API running on port ${PORT}`);

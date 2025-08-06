@@ -1,3 +1,4 @@
+import { useNavigation } from '@react-navigation/native';
 import { Activity, ChevronLeft } from 'lucide-react-native';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -9,6 +10,8 @@ const StressDetectorScreen = ({ onBack }) => {
   const [loading, setLoading] = useState(false);
   const [analysis, setAnalysis] = useState(null);
   const [showCelebration, setShowCelebration] = useState(false);
+
+  const navigation = useNavigation();
 
   const questions = [
     {
@@ -118,7 +121,7 @@ const StressDetectorScreen = ({ onBack }) => {
     const testId = 'test-user-123';
     setLoading(true);
     try {
-      const response = await fetch('http://172.16.3.162:5003/api/mental-health/stress/analyze', {
+      const response = await fetch('http://192.168.29.12:5003/api/mental-health/stress/analyze', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -237,7 +240,7 @@ const StressDetectorScreen = ({ onBack }) => {
           )}
         </View>
 
-        <TouchableOpacity onPress={onBack} style={styles.doneButton}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.doneButton}>
           <Text style={styles.doneButtonText}>Done</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -257,7 +260,7 @@ const StressDetectorScreen = ({ onBack }) => {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={onBack} style={styles.backButton}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <ChevronLeft size={24} color="white" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Stress Detector</Text>

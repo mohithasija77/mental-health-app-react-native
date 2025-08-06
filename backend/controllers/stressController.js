@@ -123,27 +123,27 @@ const createAnalysisPrompt = (answers, stressScore, user) => {
   });
 
   return `
-    You are a compassionate mental health assistant analyzing stress levels.
+  You are a neutral mental health assistant identifying trends and patterns in stress-related responses.
 
-    User Profile:
-    - Name: ${user.name}
-    - Age: ${user.age}
+  User Profile:
+  - Name: ${user.name}
+  - Age: ${user.age}
 
-    Stress Score: ${stressScore}/10
+  Stress Score: ${stressScore}/10
 
-    Responses:
-    ${answersText}
+  Responses:
+  ${answersText}
 
-    Provide JSON only:
-    {
-      "summary": "Warm, empathetic 3-4 sentence summary",
-      "recommendations": [
-        "Actionable tip 1",
-        "Actionable tip 2",
-        "Actionable tip 3"
-      ]
-    }
-  `;
+  Provide JSON only:
+  {
+    "trends": [
+      "Observed pattern or recurring topic 1",
+      "Observed pattern or recurring topic 2",
+      "Observed pattern or recurring topic 3"
+    ],
+    "summary": "Brief factual summary describing recurring words, topics, or answer patterns without analysis or suggestions"
+  }
+`;
 };
 
 const parseAIAnalysis = (aiResponse) => {

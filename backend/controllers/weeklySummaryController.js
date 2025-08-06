@@ -116,72 +116,107 @@ const weeklySummaryController = {
         });
       }
 
-      // Step 1: check if already exists
-      let existingSummary = await WeeklySummary.findOne({
-        userId,
-        weekStartDate: new Date(weekStartDate),
-      });
-
-      if (existingSummary) {
-        console.log('✅ Returning existing weekly summary from DB');
-        return res.json({
-          success: true,
-          weeklySummary: {
-            ...existingSummary.summary,
-            timestamp: existingSummary.lastUpdated,
-          },
-        });
-      }
-
-      // Step 2: compute new
+      // Step 1: Define week boundaries
       const startOfWeek = new Date(weekStartDate);
-      startOfWeek.setHours(0, 0, 0, 0);
+      startOfWeek.setHours(0, 0, 0, 0); // normalize to midnight
       const endOfWeek = new Date(startOfWeek);
       endOfWeek.setDate(endOfWeek.getDate() + 6);
       endOfWeek.setHours(23, 59, 59, 999);
 
-      console.log('Fetching data from:', startOfWeek, 'to', endOfWeek);
+      console.log('📅 Fetching data from:', startOfWeek, 'to', endOfWeek);
 
+      // Step 2: Get current week's check-in data
       const weeklyData = await DailyCheckinModel.find({
         userId,
         createdAt: { $gte: startOfWeek, $lte: endOfWeek },
       }).sort({ createdAt: 1 });
 
+      console.log(`✅ Found ${weeklyData.length} check-in(s)`);
+
+      // Step 3: Check if summary exists (always use normalized startOfWeek)
+      let existingSummary = await WeeklySummary.findOne({
+        userId,
+        weekStartDate: startOfWeek,
+      });
+
+      let needsUpdate = false;
+
+      if (existingSummary) {
+        // Compare data counts
+        const currentDataCount = weeklyData.length;
+        const savedDataCount = existingSummary.dailyCheckinIds
+          ? existingSummary.dailyCheckinIds.length
+          : 0;
+
+        if (currentDataCount !== savedDataCount) {
+          console.log(
+            `📊 Data count changed: ${savedDataCount} → ${currentDataCount}. Updating summary...`
+          );
+          needsUpdate = true;
+        } else {
+          // Check if there are newer entries since last update
+          const lastSummaryUpdate = existingSummary.lastUpdated;
+          const hasNewerEntries = weeklyData.some(
+            (entry) =>
+              entry.updatedAt > lastSummaryUpdate ||
+              entry.createdAt > lastSummaryUpdate
+          );
+
+          if (hasNewerEntries) {
+            console.log('📊 Found newer entries. Updating summary...');
+            needsUpdate = true;
+          }
+        }
+
+        if (!needsUpdate) {
+          console.log('✅ Returning existing weekly summary from DB');
+          return res.json({
+            success: true,
+            weeklySummary: {
+              ...existingSummary.summary,
+              timestamp: existingSummary.lastUpdated,
+            },
+          });
+        }
+      }
+
+      // Step 4: Handle empty data
       if (weeklyData.length === 0) {
-        // save empty summary too, so next request doesn't recalculate
-        const emptySummary = {
-          period: {
-            totalDays: 0,
-            startDate: startOfWeek,
-            endDate: endOfWeek,
-            dataRange: 'No check-ins in this week',
-          },
-          averages: {},
-          trends: {},
-          insights: {
-            aiSummary: 'No data this week to generate insights.',
-            keyPatterns: [],
-            recommendations: [],
-          },
-        };
+        if (existingSummary) {
+          await WeeklySummary.findByIdAndDelete(existingSummary._id);
+          console.log('🗑️ Deleted existing empty weekly summary');
+        }
 
         return res.json({
           success: true,
           weeklySummary: {
-            ...emptySummary,
+            period: {
+              totalDays: 0,
+              startDate: startOfWeek,
+              endDate: endOfWeek,
+              dataRange: 'No check-ins in this week',
+            },
+            averages: {},
+            trends: {},
+            insights: {
+              aiSummary: 'No data this week to generate insights.',
+              keyPatterns: [],
+              recommendations: [],
+            },
             timestamp: new Date().toISOString(),
           },
         });
       }
 
-      // compute analytics
+      // Step 5: Compute analytics & AI insights
+      console.log(`📊 Computing analytics for ${weeklyData.length} entries...`);
       const analytics = calculateWeeklyAnalytics(weeklyData);
       const aiInsights = await generateWeeklyAIInsights(weeklyData, analytics);
 
       const summaryData = {
         period: {
           totalDays: weeklyData.length,
-          dataRange: `${weeklyData.length} check-ins`,
+          dataRange: `${weeklyData.length} check-in(s)`,
           startDate: startOfWeek,
           endDate: endOfWeek,
         },
@@ -204,24 +239,39 @@ const weeklySummaryController = {
         },
       };
 
-      // save
-      if (dailyCheckinIds.length > 0) {
+      const dailyCheckinIds = weeklyData.map((d) => d._id);
+
+      // Step 6: Save or update summary
+      if (existingSummary) {
+        existingSummary.summary = summaryData;
+        existingSummary.dailyCheckinIds = dailyCheckinIds;
+        existingSummary.weekEndDate = endOfWeek;
+        existingSummary.lastUpdated = new Date();
+        const updated = await existingSummary.save();
+
+        console.log('✅ Updated existing weekly summary');
+        return res.json({
+          success: true,
+          weeklySummary: { ...summaryData, timestamp: updated.lastUpdated },
+        });
+      } else {
         const saved = await WeeklySummary.create({
           userId,
           weekStartDate: startOfWeek,
           weekEndDate: endOfWeek,
           summary: summaryData,
-          dailyCheckinIds: weeklyData.map((d) => d._id),
+          dailyCheckinIds: dailyCheckinIds,
           lastUpdated: new Date(),
         });
 
+        console.log('✅ Created new weekly summary');
         return res.json({
           success: true,
           weeklySummary: { ...summaryData, timestamp: saved.lastUpdated },
         });
       }
     } catch (error) {
-      console.error('Error generating weekly summary:', error);
+      console.error('❌ Error generating weekly summary:', error);
       res.status(500).json({
         success: false,
         error: 'Failed to generate weekly summary',

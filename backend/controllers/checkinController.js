@@ -1,5 +1,8 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const {
+  DailyCheckinModel: DailyCheckin,
+} = require('../models/DailyCheckinModel');
 const { DailyCheckinModel } = require('../models/DailyCheckinModel');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 // Initialize Gemini AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -516,7 +519,7 @@ async function generateSupportiveInsights(data) {
     return response.text();
   } catch (error) {
     console.error('Error generating supportive insights:', error);
-    return generateFallbackSupportiveResponse(data);
+    // return generateFallbackSupportiveResponse(data);
   }
 }
 
