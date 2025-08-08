@@ -3,9 +3,11 @@ import LottieView from 'lottie-react-native';
 import { useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { scheduleDailyReminder } from 'services/DailyNotifications';
+import OAuthLoginButtons from '../components/OAuthLoginButtons';
 import ApiService from '../services/api'; // Adjust path as needed
 
-export default function LoginScreen() {
+export default function LoginScreen({ setIsAuthenticated }) {
   const navigation = useNavigation();
   const passwordInputRef = useRef(null);
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -70,6 +72,7 @@ export default function LoginScreen() {
             // Extract the actual user object from the nested structure
             const userData = userResponse.data.data.user;
             await ApiService.saveUserData(userData);
+
             console.log('Login - Token saved:', response.data.token);
             console.log('Login - User data saved:', userData);
           } else {
@@ -82,9 +85,11 @@ export default function LoginScreen() {
         Alert.alert('Welcome Back!', 'Login successful!', [
           {
             text: 'OK',
-            onPress: () => {
+            onPress: async () => {
               try {
-                navigation.navigate('Welcome');
+                setIsAuthenticated(true);
+                // Start daily notifications
+                await scheduleDailyReminder();
               } catch (error) {
                 console.log('Navigation error, using reset instead');
                 navigation.reset({
@@ -126,10 +131,6 @@ export default function LoginScreen() {
 
   const handleForgotPassword = () => {
     Alert.alert('Forgot Password', 'Password reset functionality will be available soon!');
-  };
-
-  const handleSocialLogin = (provider) => {
-    Alert.alert('Coming Soon', `${provider} login will be available soon!`);
   };
 
   return (
@@ -209,23 +210,22 @@ export default function LoginScreen() {
       </View>
 
       {/* Social Login Options */}
-      <View className="mt-8 items-center">
-        <Text className="mb-4 text-gray-500">Or continue with</Text>
-        <View className="flex-row items-center justify-center space-x-4">
-          <TouchableOpacity
-            onPress={() => handleSocialLogin('Facebook')}
-            disabled={loading}
-            className="h-12 w-12 items-center justify-center rounded-full border border-gray-200 bg-white shadow">
-            <Text className="text-xl font-bold text-blue-700">f</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => handleSocialLogin('Google')}
-            disabled={loading}
-            className="h-12 w-12 items-center justify-center rounded-full border border-gray-200 bg-white shadow">
-            <Text className="text-xl font-bold text-red-600">G</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      <OAuthLoginButtons
+        onSuccess={async () => {
+          try {
+            setIsAuthenticated(true);
+            await scheduleDailyReminder();
+
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Home' }],
+            });
+          } catch (error) {
+            console.log('OAuth navigation error:', error);
+          }
+        }}
+        loading={loading}
+      />
 
       <View className="mt-6 flex-row justify-center">
         <Text className="text-gray-500">Don't have an account?</Text>

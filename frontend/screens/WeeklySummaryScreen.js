@@ -1,4 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native';
+import Constants from 'expo-constants';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -11,6 +15,7 @@ import {
 } from 'react-native';
 import { PieChart } from 'react-native-chart-kit';
 import Icon from 'react-native-vector-icons/Feather';
+const { API_BASE_URL } = Constants.expoConfig.extra;
 
 const WeeklySummaryScreen = () => {
   const [weeklySummary, setWeeklySummary] = useState(null);
@@ -18,6 +23,9 @@ const WeeklySummaryScreen = () => {
   const [hasCheckedInToday, setHasCheckedInToday] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [userId, setUserId] = useState(null);
+  const [showCheckinButton, setShowCheckinButton] = useState(true);
+
+  const navigation = useNavigation();
 
   const today = new Date();
   const firstDayOfWeek = new Date(today);
@@ -42,6 +50,22 @@ const WeeklySummaryScreen = () => {
       stroke: '#6366f1',
     },
   };
+
+  const isCurrentWeek = () => {
+    const today = new Date();
+    const startOfSelectedWeek = new Date(selectedWeekStart);
+    const endOfSelectedWeek = new Date(startOfSelectedWeek);
+    endOfSelectedWeek.setDate(startOfSelectedWeek.getDate() + 6);
+
+    // Normalize to midnight for accurate date-only comparison
+    today.setHours(0, 0, 0, 0);
+    startOfSelectedWeek.setHours(0, 0, 0, 0);
+    endOfSelectedWeek.setHours(0, 0, 0, 0);
+
+    return today >= startOfSelectedWeek && today <= endOfSelectedWeek;
+  };
+
+  const showStartWeeklyCheckinButton = isCurrentWeek() && !hasCheckedInToday;
 
   const endDate = selectedWeekStart
     ? new Date(selectedWeekStart.getTime() + 6 * 24 * 60 * 60 * 1000)
@@ -85,20 +109,17 @@ const WeeklySummaryScreen = () => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-      const response = await fetch(
-        'http://192.168.29.12:5003/api/mental-health/summary/weekly-summary',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            userId: userIdParam,
-            weekStartDate: weekStart.toISOString(),
-          }),
-          signal: controller.signal,
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/api/mental-health/summary/weekly-summary`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: userIdParam,
+          weekStartDate: weekStart.toISOString(),
+        }),
+        signal: controller.signal,
+      });
 
       clearTimeout(timeoutId);
 
@@ -115,7 +136,6 @@ const WeeklySummaryScreen = () => {
 
       if (data.success) {
         setWeeklySummary(data.weeklySummary);
-        Alert.alert('Success', 'Weekly summary generated!');
       } else {
         Alert.alert('Error', data.error || 'Failed to generate weekly summary');
       }
@@ -151,7 +171,7 @@ const WeeklySummaryScreen = () => {
       }
 
       const response = await fetch(
-        `http://192.168.29.12:5003/api/mental-health/checkin/check-today/${user._id}`,
+        `${API_BASE_URL}/api/mental-health/checkin/check-today/${user._id}`,
         {
           method: 'GET',
           headers: {
@@ -179,6 +199,87 @@ const WeeklySummaryScreen = () => {
     }
   };
 
+  const handleExportData = async () => {
+    try {
+      if (!weeklySummary || !userId) {
+        Alert.alert('Error', 'No data available to export');
+        return;
+      }
+
+      const exportData = {
+        exportInfo: {
+          userId: userId,
+          exportDate: new Date().toISOString(),
+          exportType: 'weekly_summary',
+          version: '1.0',
+        },
+        period: {
+          weekStart: selectedWeekStart.toISOString(),
+          weekEnd: endDate.toISOString(),
+          weekNumber: getWeekNumber(selectedWeekStart),
+          year: selectedWeekStart.getFullYear(),
+        },
+        summary: {
+          totalCheckIns: weeklySummary.period?.totalDays || 0,
+          dataRange: weeklySummary.period?.dataRange || 'No data available',
+          averages: {
+            wellnessScore: weeklySummary.averages?.wellnessScore || 0,
+            sleepQuality: weeklySummary.averages?.sleepQuality || 0,
+            feelingScale: weeklySummary.averages?.feelingScale || 0,
+            stressLevel: weeklySummary.averages?.stressLevel || 0,
+          },
+        },
+        trends: {
+          wellnessScoreTrend: weeklySummary.trends?.wellnessScoreTrend || 'stable',
+          moodFrequency: weeklySummary.trends?.moodFrequency || {},
+          bestDay: weeklySummary.trends?.bestDay || null,
+          challengingDay: weeklySummary.trends?.challengingDay || null,
+        },
+        insights: {
+          aiSummary: weeklySummary.insights?.aiSummary || '',
+          keyPatterns: weeklySummary.insights?.keyPatterns || [],
+        },
+        dailyEntries: weeklySummary.dailyEntries || [],
+        rawData: weeklySummary,
+      };
+
+      // Create a JSON string of the export
+      const jsonString = JSON.stringify(exportData, null, 2);
+
+      // Define file path
+      const fileName = `weekly-summary-${formatDate(selectedWeekStart)}.json`;
+      const fileUri = FileSystem.documentDirectory + fileName;
+
+      // Write the file
+      await FileSystem.writeAsStringAsync(fileUri, jsonString, {
+        encoding: FileSystem.EncodingType.UTF8,
+      });
+
+      // Share or open the file
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(fileUri);
+      } else {
+        Alert.alert('File Saved', `File has been saved to: ${fileUri}`);
+      }
+
+      console.log('Exported to:', fileUri);
+    } catch (error) {
+      console.error('Export error:', error);
+      Alert.alert(
+        'Export Failed',
+        'There was an error exporting your weekly summary. Please try again.',
+        [{ text: 'OK' }]
+      );
+    }
+  };
+
+  // Helper function to get week number
+  const getWeekNumber = (date) => {
+    const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
+    const pastDaysOfYear = (date - firstDayOfYear) / 86400000;
+    return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+  };
+
   useEffect(() => {
     const initializeData = async () => {
       const userIdFromStorage = await getUserData();
@@ -194,6 +295,11 @@ const WeeklySummaryScreen = () => {
   }, []);
 
   useEffect(() => {
+    const shouldShowButton = isCurrentWeek() && !hasCheckedInToday;
+    setShowCheckinButton(shouldShowButton);
+  }, [selectedWeekStart, hasCheckedInToday]);
+
+  useEffect(() => {
     if (userId && selectedWeekStart) {
       generateWeeklySummary(selectedWeekStart, userId);
     }
@@ -206,7 +312,8 @@ const WeeklySummaryScreen = () => {
 
     setSelectedWeekStart(newDate);
   };
-
+  console.log(isCurrentWeek(), !hasCheckedInToday);
+  console.log('checkinbutton', showCheckinButton);
   const formatDate = (date) => {
     if (!date || isNaN(date)) return '';
     return new Intl.DateTimeFormat('en-GB', {
@@ -475,16 +582,14 @@ const WeeklySummaryScreen = () => {
                 <Text className="mt-2 text-center leading-6 text-gray-500">
                   {weeklySummary.period?.dataRange || 'No check-ins for this week'}
                 </Text>
+
                 <TouchableOpacity
                   className="mt-6 rounded-lg bg-blue-600 px-6 py-3"
-                  onPress={() => {
-                    /* Navigate to daily check-in */
-                  }}>
+                  onPress={() => navigation.navigate('MentalCheckIn')}>
                   <Text className="font-semibold text-white">Start Daily Check-in</Text>
                 </TouchableOpacity>
               </View>
             )}
-
             {/* AI Insights - Always show if available */}
             {weeklySummary.insights?.aiSummary && (
               <View className="mb-6 rounded-xl bg-white p-4 shadow-sm">
@@ -497,7 +602,6 @@ const WeeklySummaryScreen = () => {
                 <Text className="leading-6 text-gray-700">{weeklySummary.insights.aiSummary}</Text>
               </View>
             )}
-
             {/* Key Patterns - Only show if patterns exist */}
             {weeklySummary.insights?.keyPatterns?.length > 0 && (
               <View className="mb-6 rounded-xl bg-white p-4 shadow-sm">
@@ -516,29 +620,13 @@ const WeeklySummaryScreen = () => {
               </View>
             )}
 
-            {/* Recommendations - Only show if recommendations exist */}
-            {weeklySummary.insights?.recommendations?.length > 0 && (
-              <View className="mb-6 rounded-xl bg-white p-4 shadow-sm">
-                <View className="mb-4 flex-row items-center">
-                  <Icon name="lightbulb" size={20} color="#f59e0b" />
-                  <Text className="ml-2 flex-1 text-lg font-semibold text-gray-900">
-                    Recommendations
-                  </Text>
-                </View>
-                {weeklySummary.insights.recommendations.map((rec, idx) => (
-                  <View key={idx} className="mb-3 flex-row items-start">
-                    <View className="mr-3 mt-2 h-2 w-2 flex-shrink-0 rounded-full bg-yellow-500" />
-                    <Text className="flex-1 leading-5 text-gray-700">{rec}</Text>
-                  </View>
-                ))}
-              </View>
-            )}
-
             {/* Take Action - Always show */}
             <View className="mb-6 rounded-xl bg-white p-4 shadow-sm">
               <Text className="mb-4 text-lg font-semibold text-gray-900">Take Action</Text>
-              {!hasCheckedInToday ? (
-                <TouchableOpacity className="mb-3 rounded-lg bg-blue-600 p-4">
+              {showCheckinButton ? (
+                <TouchableOpacity
+                  className="mb-3 rounded-lg bg-blue-600 p-4"
+                  onPress={() => navigation.navigate('MentalCheckIn')}>
                   <View className="flex-row items-center justify-center">
                     <Icon name="plus" size={20} color="white" />
                     <Text className="ml-2 text-center font-semibold text-white">
@@ -550,17 +638,41 @@ const WeeklySummaryScreen = () => {
                 <></>
               )}
 
-              <TouchableOpacity className="mb-3 rounded-lg bg-green-600 p-4">
+              {/* <TouchableOpacity className="mb-3 rounded-lg bg-green-600 p-4">
                 <View className="flex-row items-center justify-center">
                   <Icon name="share" size={20} color="white" />
                   <Text className="ml-2 text-center font-semibold text-white">Share Summary</Text>
                 </View>
-              </TouchableOpacity>
-
-              <TouchableOpacity className="rounded-lg bg-purple-600 p-4">
+              </TouchableOpacity> */}
+              {hasData ? (
+                <TouchableOpacity
+                  className="rounded-lg bg-purple-600 p-4"
+                  onPress={handleExportData}>
+                  <View className="flex-row items-center justify-center">
+                    <Icon name="download" size={20} color="white" />
+                    <Text className="ml-2 text-center font-semibold text-white">Export Data</Text>
+                  </View>
+                </TouchableOpacity>
+              ) : (
+                <>
+                  <TouchableOpacity className="rounded-lg bg-teal-600 p-4">
+                    <View className="flex-row items-center justify-center">
+                      <Text className="ml-2 text-center font-semibold text-white">
+                        No Actions to take
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                </>
+              )}
+            </View>
+            {/* Go Back Button */}
+            <View className="mb-6">
+              <TouchableOpacity
+                className="rounded-lg border border-gray-300 bg-white p-4"
+                onPress={() => navigation.navigate('Welcome')}>
                 <View className="flex-row items-center justify-center">
-                  <Icon name="download" size={20} color="white" />
-                  <Text className="ml-2 text-center font-semibold text-white">Export Data</Text>
+                  <Icon name="arrow-left" size={20} color="#374151" />
+                  <Text className="ml-2 text-center font-semibold text-gray-700">Back to Home</Text>
                 </View>
               </TouchableOpacity>
             </View>
@@ -576,9 +688,7 @@ const WeeklySummaryScreen = () => {
             </Text>
             <TouchableOpacity
               className="mt-6 rounded-lg bg-blue-600 px-6 py-3"
-              onPress={() => {
-                /* Navigate to daily check-in */
-              }}>
+              onPress={() => navigation.navigate('MentalCheckIn')}>
               <Text className="font-semibold text-white">Start Daily Check-in</Text>
             </TouchableOpacity>
           </View>

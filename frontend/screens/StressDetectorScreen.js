@@ -1,7 +1,9 @@
 import { useNavigation } from '@react-navigation/native';
+import Constants from 'expo-constants';
 import { Activity, ChevronLeft } from 'lucide-react-native';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+const { API_BASE_URL } = Constants.expoConfig.extra;
 
 const StressDetectorScreen = ({ onBack }) => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -121,7 +123,7 @@ const StressDetectorScreen = ({ onBack }) => {
     const testId = 'test-user-123';
     setLoading(true);
     try {
-      const response = await fetch('http://192.168.29.12:5003/api/mental-health/stress/analyze', {
+      const response = await fetch(`${API_BASE_URL}/api/mental-health/stress/analyze`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -166,16 +168,34 @@ const StressDetectorScreen = ({ onBack }) => {
         <Text style={styles.questionText}>{question.question}</Text>
 
         {question.type === 'emoji' && (
-          <View style={styles.optionsRow}>
-            {question.options.map((option, idx) => (
-              <TouchableOpacity
-                key={idx}
-                onPress={() => handleAnswer(option.value)}
-                style={styles.optionButton}>
-                <Text style={styles.emoji}>{option.emoji}</Text>
-                <Text style={styles.optionLabel}>{option.label}</Text>
-              </TouchableOpacity>
-            ))}
+          <View style={styles.emojiContainer}>
+            {question.options.map((option, idx) => {
+              // Create a complete circle
+              const totalOptions = question.options.length;
+              const angle = (2 * Math.PI * idx) / totalOptions - Math.PI / 2; // Full circle (2π)
+
+              const radius = 120;
+              const centerX = 0;
+              const centerY = 0; // Center of the container
+
+              const x = centerX + radius * Math.cos(angle);
+              const y = centerY + radius * Math.sin(angle);
+
+              return (
+                <TouchableOpacity
+                  key={idx}
+                  onPress={() => handleAnswer(option.value)}
+                  style={[
+                    styles.emojiButton,
+                    {
+                      transform: [{ translateX: x }, { translateY: y }],
+                    },
+                  ]}>
+                  <Text style={styles.emoji}>{option.emoji}</Text>
+                  <Text style={styles.optionLabel}>{option.label}</Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         )}
 
@@ -193,14 +213,14 @@ const StressDetectorScreen = ({ onBack }) => {
         )}
 
         {question.type === 'slider' && (
-          <View style={styles.sliderRow}>
+          <View style={styles.sliderContainer}>
             <Text style={styles.sliderHint}>Tap a number (1-10)</Text>
-            <View style={styles.sliderNumbers}>
+            <View style={styles.sliderGrid}>
               {Array.from({ length: 10 }, (_, i) => i + 1).map((num) => (
                 <TouchableOpacity
                   key={num}
                   onPress={() => handleAnswer(num)}
-                  style={styles.sliderNumber}>
+                  style={styles.sliderNumberButton}>
                   <Text style={styles.sliderNumberText}>{num}</Text>
                 </TouchableOpacity>
               ))}
@@ -222,22 +242,6 @@ const StressDetectorScreen = ({ onBack }) => {
         <View style={styles.analysisBox}>
           <Text style={styles.analysisTitle}>Analysis</Text>
           <Text style={styles.analysisText}>{analysis.summary}</Text>
-        </View>
-
-        <View style={styles.analysisBox}>
-          <Text style={styles.analysisTitle}>Recommendations 💡</Text>
-          {/* Fixed: Added safe check for recommendations array */}
-          {analysis.recommendations && analysis.recommendations.length > 0 ? (
-            analysis.recommendations.map((rec, idx) => (
-              <Text key={idx} style={styles.recommendationText}>
-                • {rec}
-              </Text>
-            ))
-          ) : (
-            <Text style={styles.recommendationText}>
-              No recommendations available at this time.
-            </Text>
-          )}
         </View>
 
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.doneButton}>
@@ -316,6 +320,7 @@ const styles = StyleSheet.create({
     color: 'white',
     textAlign: 'center',
     marginBottom: 16,
+    marginTop: 20,
   },
   optionsRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' },
   optionButton: {
@@ -379,4 +384,87 @@ const styles = StyleSheet.create({
   celebrationEmoji: { fontSize: 48 },
   celebrationTitle: { color: 'white', fontSize: 24, fontWeight: 'bold', marginTop: 8 },
   celebrationText: { color: 'white', marginTop: 4 },
+  radialContainer: {
+    position: 'relative',
+    width: 300,
+    height: 300,
+    alignSelf: 'center',
+    marginTop: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  radialButton: {
+    position: 'absolute',
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 6,
+  },
+  radialCenterText: {
+    color: 'white',
+    position: 'absolute',
+    top: '50%', // Use percentage for better centering
+    left: '50%', // Use percentage for better centering
+    transform: [{ translateX: -30 }, { translateY: -10 }], // Approximate centering
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  emojiContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    position: 'relative',
+  },
+  emojiButton: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    width: 125,
+    height: 105,
+    borderRadius: 55,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    position: 'absolute', // Required for transform positioning
+  },
+  sliderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+
+  sliderArc: {
+    position: 'relative',
+    width: 300,
+    height: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  sliderGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    maxWidth: 300,
+    gap: 12,
+  },
+
+  sliderNumberButton: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    margin: 4,
+  },
 });

@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Slider from '@react-native-community/slider';
 import { useNavigation } from '@react-navigation/native';
+import Constants from 'expo-constants';
 import LottieView from 'lottie-react-native';
 import { useEffect, useState } from 'react';
 import {
@@ -15,6 +16,8 @@ import {
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import Svg, { Path } from 'react-native-svg';
+import Icon from 'react-native-vector-icons/Feather';
+const { API_BASE_URL } = Constants.expoConfig.extra;
 
 const { width, height } = Dimensions.get('window');
 
@@ -51,6 +54,62 @@ export default function MentalCheckInScreen() {
     'optimistic',
   ];
 
+  // Label mappings for each scale
+  const feelingLabels = {
+    1: 'Terrible',
+    2: 'Very Bad',
+    3: 'Bad',
+    4: 'Poor',
+    5: 'Okay',
+    6: 'Fair',
+    7: 'Good',
+    8: 'Very Good',
+    9: 'Great',
+    10: 'Excellent',
+  };
+
+  const sleepLabels = {
+    1: 'Terrible',
+    2: 'Very Poor',
+    3: 'Poor',
+    4: 'Below Average',
+    5: 'Average',
+    6: 'Fair',
+    7: 'Good',
+    8: 'Very Good',
+    9: 'Excellent',
+    10: 'Perfect',
+  };
+
+  const stressLabels = {
+    1: 'No Stress',
+    2: 'Minimal',
+    3: 'Low',
+    4: 'Mild',
+    5: 'Moderate',
+    6: 'Noticeable',
+    7: 'High',
+    8: 'Very High',
+    9: 'Severe',
+    10: 'Overwhelming',
+  };
+
+  // Function to get label color based on value and scale type
+  const getLabelColor = (value, scaleType) => {
+    if (scaleType === 'stress') {
+      // For stress, higher values are worse (red), lower values are better (green)
+      if (value <= 3) return '#10B981'; // green-600
+      if (value <= 6) return '#EAB308'; // yellow-500
+      return '#DC2626'; // red-600
+    } else {
+      // For feeling and sleep, higher values are better
+      if (value >= 8) return '#10B981'; // green-600
+      if (value >= 6) return '#EAB308'; // yellow-500
+      if (value >= 4) return '#EA580C'; // orange-600
+      return '#DC2626'; // red-600
+    }
+  };
+
   const checkTodaysCheckin = async () => {
     try {
       setIsLoading(true);
@@ -68,7 +127,7 @@ export default function MentalCheckInScreen() {
       }
 
       const response = await fetch(
-        `http://192.168.29.12:5003/api/mental-health/checkin/check-today/${user._id}`,
+        `${API_BASE_URL}/api/mental-health/checkin/check-today/${user._id}`,
         {
           method: 'GET',
           headers: {
@@ -131,7 +190,7 @@ export default function MentalCheckInScreen() {
     };
 
     try {
-      const response = await fetch('http://192.168.29.12:5003/api/mental-health/analyze', {
+      const response = await fetch(`${API_BASE_URL}/api/mental-health/analyze`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -234,41 +293,84 @@ export default function MentalCheckInScreen() {
 
         {/* Feeling Scale */}
         <View className="mb-4">
-          <Text className="mb-2 font-semibold text-slate-700">Feeling Scale (1 - 10)</Text>
+          <View className="mb-2 flex-row items-center justify-between">
+            <Text className="font-semibold text-slate-700">How are you feeling today?</Text>
+            <Text
+              className="text-lg font-bold"
+              style={{ color: getLabelColor(feelingScale, 'feeling') }}>
+              {feelingLabels[feelingScale]}
+            </Text>
+          </View>
+
           <Slider
             minimumValue={1}
             maximumValue={10}
             value={feelingScale}
             step={1}
             onValueChange={setFeelingScale}
+            minimumTrackTintColor={getLabelColor(feelingScale, 'feeling')}
+            maximumTrackTintColor="#E2E8F0"
+            thumbStyle={{ backgroundColor: getLabelColor(feelingScale, 'feeling') }}
           />
-          <Text className="text-right text-slate-600">{feelingScale}</Text>
+          <View className="mt-1 flex-row justify-between">
+            <Text className="text-xs text-slate-500">Terrible</Text>
+            <Text className="text-xs text-slate-500">Okay</Text>
+            <Text className="text-xs text-slate-500">Excellent</Text>
+          </View>
         </View>
 
         {/* Sleep Quality */}
-        <View className="mb-4">
-          <Text className="mb-2 font-semibold text-slate-700">Sleep Quality (1 - 10)</Text>
+        <View className="mb-4 mt-4">
+          <View className="mb-2 flex-row items-center justify-between">
+            <Text className="font-semibold text-slate-700">How was your sleep quality?</Text>
+            <Text
+              className="text-lg font-bold"
+              style={{ color: getLabelColor(sleepQuality, 'sleep') }}>
+              {sleepLabels[sleepQuality]}
+            </Text>
+          </View>
           <Slider
             minimumValue={1}
             maximumValue={10}
             value={sleepQuality}
             step={1}
             onValueChange={setSleepQuality}
+            minimumTrackTintColor={getLabelColor(sleepQuality, 'sleep')}
+            maximumTrackTintColor="#E2E8F0"
+            thumbStyle={{ backgroundColor: getLabelColor(sleepQuality, 'sleep') }}
           />
-          <Text className="text-right text-slate-600">{sleepQuality}</Text>
+          <View className="mt-1 flex-row justify-between">
+            <Text className="text-xs text-slate-500">Terrible</Text>
+            <Text className="text-xs text-slate-500">Average</Text>
+            <Text className="text-xs text-slate-500">Perfect</Text>
+          </View>
         </View>
 
         {/* Stress Level */}
-        <View className="mb-4">
-          <Text className="mb-2 font-semibold text-slate-700">Stress Level (1 - 10)</Text>
+        <View className="mb-4 mt-4">
+          <View className="mb-2 flex-row items-center justify-between">
+            <Text className="font-semibold text-slate-700">What's your stress level?</Text>
+            <Text
+              className="text-lg font-bold"
+              style={{ color: getLabelColor(stressLevel, 'stress') }}>
+              {stressLabels[stressLevel]}
+            </Text>
+          </View>
           <Slider
             minimumValue={1}
             maximumValue={10}
             value={stressLevel}
             step={1}
             onValueChange={setStressLevel}
+            minimumTrackTintColor={getLabelColor(stressLevel, 'stress')}
+            maximumTrackTintColor="#E2E8F0"
+            thumbStyle={{ backgroundColor: getLabelColor(stressLevel, 'stress') }}
           />
-          <Text className="text-right text-slate-600">{stressLevel}</Text>
+          <View className="mt-1 flex-row justify-between">
+            <Text className="text-xs text-slate-500">No Stress</Text>
+            <Text className="text-xs text-slate-500">Moderate</Text>
+            <Text className="text-xs text-slate-500">Overwhelming</Text>
+          </View>
         </View>
 
         {/* Mood Dropdown */}
@@ -369,10 +471,17 @@ export default function MentalCheckInScreen() {
           </Text>
         </TouchableOpacity>
 
-        {/* Back */}
-        <TouchableOpacity onPress={() => navigation.goBack()} className="mb-8 items-center">
-          <Text className="font-semibold text-indigo-500">Back to Home</Text>
-        </TouchableOpacity>
+        {/* Go Back Button */}
+        <View className="mb-6">
+          <TouchableOpacity
+            className="rounded-lg border border-gray-300 bg-white p-4"
+            onPress={() => navigation.navigate('Welcome')}>
+            <View className="flex-row items-center justify-center">
+              <Icon name="arrow-left" size={20} color="#374151" />
+              <Text className="ml-2 text-center font-semibold text-gray-700">Back to Home</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
       </View>
     </KeyboardAwareScrollView>
   );

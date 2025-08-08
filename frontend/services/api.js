@@ -1,14 +1,15 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
+const { API_BASE_URL } = Constants.expoConfig.extra;
 
 // Configuration
-const API_BASE_URL = 'http://192.168.29.12:5003/api'; // Change this to your server URL
+const AUTH_BASE_URL = `${API_BASE_URL}/api`; // Change this to your server URL
 // For Android emulator use: http://10.0.2.2:5000/api
 // For iOS simulator use: http://localhost:5000/api
-// For physical device use your computer's IP: http://192.168.1.xxx:5000/api
 
 class ApiService {
   constructor() {
-    this.baseURL = API_BASE_URL;
+    this.baseURL = AUTH_BASE_URL;
   }
 
   // Get stored token
@@ -167,10 +168,15 @@ class ApiService {
     }
   }
 
-  // Check if user is authenticated
+  // utils/AuthService.js
   async isAuthenticated() {
-    const token = await this.getToken();
-    return !!token;
+    try {
+      const token = await this.getToken();
+      return !!token;
+    } catch (error) {
+      console.error('Error checking authentication:', error);
+      return false;
+    }
   }
 }
 

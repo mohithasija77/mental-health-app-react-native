@@ -51,6 +51,7 @@ const weeklySummaryRoutes = require('./routes/weeklySummaryRoutes');
 const stressRoutes = require('./routes/stressRoutes');
 const checkinStatus = require('./routes/checkinStatusRoutes');
 const authRoutes = require('./routes/auth');
+const exportRoutes = require('./routes/export');
 
 // Routes
 app.use('/api/mental-health', checkinRoutes);
@@ -58,6 +59,7 @@ app.use('/api/mental-health/summary', weeklySummaryRoutes);
 app.use('/api/mental-health/stress', stressRoutes);
 app.use('/api/mental-health/checkin', checkinStatus);
 app.use('/api/auth', authRoutes);
+app.use('/api/mental-health/export', exportRoutes);
 
 // Error handling middleware
 app.use((error, req, res, next) => {

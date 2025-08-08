@@ -29,6 +29,11 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    oauth: {
+      google: String,
+      facebook: String,
+      // Add other providers as needed
+    },
     profilePicture: {
       type: String,
       default: null,

@@ -1,8 +1,10 @@
-// App.js
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { StatusBar } from 'expo-status-bar';
+import * as Notifications from 'expo-notifications';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import ApiService from './services/api';
 
 // Import screens
 import HomeScreen from './screens/HomeScreen';
@@ -14,31 +16,90 @@ import MentalCheckInScreen from 'screens/MentalCheckInScreen';
 import MentalHealthFacts from 'screens/MentalHealthFactsScreen';
 import StressDetectorScreen from 'screens/StressDetectorScreen';
 import WeeklySummaryScreen from 'screens/WeeklySummaryScreen';
+import {
+  cancelDailyReminder,
+  handleNotificationResponse,
+  scheduleDailyReminder,
+} from 'services/DailyNotifications';
+import { navigationRef } from 'services/NavigationRef';
 import './global.css';
 
 const Stack = createNativeStackNavigator();
 
 export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Function to check authentication
+  const checkAuth = async () => {
+    const authenticated = await ApiService.isAuthenticated();
+    setIsAuthenticated(authenticated);
+    await scheduleDailyReminder();
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  useEffect(() => {
+    const subscription = Notifications.addNotificationResponseReceivedListener(
+      handleNotificationResponse
+    );
+    return () => subscription.remove(); // ✅ Clean up
+  }, []);
+
+  // Function to handle logout - this will be passed to screens that need it
+  const handleLogout = async () => {
+    setLoading(true);
+    await ApiService.logout();
+    setIsAuthenticated(false);
+    await cancelDailyReminder();
+    setLoading(false);
+  };
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#007AFF" />
+      </View>
+    );
+  }
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <NavigationContainer>
-        <Stack.Navigator
-          initialRouteName="Welcome"
-          screenOptions={{
-            headerShown: false,
-          }}>
-          <Stack.Screen name="Welcome" component={WelcomeScreen} />
-          <Stack.Screen name="SignUp" component={SignUpScreen} />
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="Home" component={HomeScreen} />
-          <Stack.Screen name="MentalCheckIn" component={MentalCheckInScreen} />
-          <Stack.Screen name="WeeklySummary" component={WeeklySummaryScreen} />
-
-          <Stack.Screen name="MentalHealthFacts" component={MentalHealthFacts} />
-
-          <Stack.Screen name="StressDetector" component={StressDetectorScreen} />
+      <NavigationContainer ref={navigationRef}>
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          {!isAuthenticated ? (
+            <>
+              <Stack.Screen name="Login">
+                {(props) => <LoginScreen {...props} setIsAuthenticated={setIsAuthenticated} />}
+              </Stack.Screen>
+              <Stack.Screen name="SignUp">
+                {(props) => <SignUpScreen {...props} setIsAuthenticated={setIsAuthenticated} />}
+              </Stack.Screen>
+            </>
+          ) : (
+            <>
+              <Stack.Screen name="Welcome">
+                {(props) => (
+                  <WelcomeScreen
+                    {...props}
+                    setIsAuthenticated={setIsAuthenticated}
+                    handleLogout={handleLogout}
+                  />
+                )}
+              </Stack.Screen>
+              <Stack.Screen name="Home">
+                {(props) => <HomeScreen {...props} handleLogout={handleLogout} />}
+              </Stack.Screen>
+              <Stack.Screen name="MentalCheckIn" component={MentalCheckInScreen} />
+              <Stack.Screen name="MentalHealthFacts" component={MentalHealthFacts} />
+              <Stack.Screen name="StressDetector" component={StressDetectorScreen} />
+              <Stack.Screen name="WeeklySummary" component={WeeklySummaryScreen} />
+            </>
+          )}
         </Stack.Navigator>
-        <StatusBar style="dark" />
       </NavigationContainer>
     </GestureHandlerRootView>
   );

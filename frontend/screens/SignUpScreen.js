@@ -3,9 +3,11 @@ import LottieView from 'lottie-react-native';
 import { useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { scheduleDailyReminder } from 'services/DailyNotifications';
+import OAuthLoginButtons from '../components/OAuthLoginButtons';
 import ApiService from '../services/api'; // Adjust path as needed
 
-export default function SignUpScreen() {
+export default function SignUpScreen({ setIsAuthenticated }) {
   const navigation = useNavigation();
   const emailInputRef = useRef(null);
   const passwordInputRef = useRef(null);
@@ -115,7 +117,7 @@ export default function SignUpScreen() {
             text: 'OK',
             onPress: () => {
               try {
-                navigation.navigate('Welcome');
+                setIsAuthenticated(true);
               } catch (error) {
                 console.log('Navigation error, using reset instead');
                 navigation.reset({
@@ -257,20 +259,23 @@ export default function SignUpScreen() {
         </TouchableOpacity>
       </View>
 
-      <View className="mt-10 flex-row items-center justify-center space-x-4">
-        <TouchableOpacity
-          onPress={() => handleSocialSignUp('Facebook')}
-          disabled={loading}
-          className="h-12 w-12 items-center justify-center rounded-full border border-gray-200 bg-white shadow">
-          <Text className="text-xl font-bold text-blue-700">f</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => handleSocialSignUp('Google')}
-          disabled={loading}
-          className="h-12 w-12 items-center justify-center rounded-full border border-gray-200 bg-white shadow">
-          <Text className="text-xl font-bold text-red-600">G</Text>
-        </TouchableOpacity>
-      </View>
+      {/* Social Login Options */}
+      <OAuthLoginButtons
+        onSuccess={async () => {
+          try {
+            setIsAuthenticated(true);
+            await scheduleDailyReminder();
+
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Home' }],
+            });
+          } catch (error) {
+            console.log('OAuth navigation error:', error);
+          }
+        }}
+        loading={loading}
+      />
 
       <View className="mt-6 flex-row justify-center">
         <Text className="text-gray-500">ALREADY HAVE AN ACCOUNT?</Text>

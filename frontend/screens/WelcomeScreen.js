@@ -8,7 +8,7 @@ import Svg, { Path } from 'react-native-svg';
 
 const { width, height } = Dimensions.get('window');
 
-export default function HomeScreen() {
+export default function HomeScreen({ setIsAuthenticated, handleLogout }) {
   const [userName, setUserName] = useState('');
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation();
@@ -32,6 +32,11 @@ export default function HomeScreen() {
       setLoading(false);
     }
   };
+
+  // const handleLogout = async () => {
+  //   await ApiService.logout();
+  //   setIsAuthenticated(false);
+  // };
 
   useEffect(() => {
     getUserName();
@@ -146,7 +151,7 @@ export default function HomeScreen() {
 
         {/* Footer */}
         <View className="mt-6 flex-row justify-center pb-6">
-          <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+          <TouchableOpacity onPress={handleLogout}>
             <Text
               className="ml-1 font-semibold text-indigo-600"
               style={{ fontFamily: 'QuicksandBold' }}>

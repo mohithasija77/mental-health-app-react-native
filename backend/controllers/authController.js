@@ -98,21 +98,48 @@ exports.signup = async (req, res) => {
 // @access  Public
 exports.login = async (req, res) => {
   try {
-    // Check for validation errors
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
+    const { email, password, isOAuth, provider, providerId, name } = req.body;
+
+    // OAuth login
+    if (isOAuth) {
+      let user = await User.findOne({
+        $or: [{ email }, { [`oauth.${provider}`]: providerId }],
+      });
+
+      if (!user) {
+        user = new User({
+          name,
+          email,
+          oauth: { [provider]: providerId },
+          isEmailVerified: true,
+        });
+        await user.save();
+      } else if (!user.oauth?.[provider]) {
+        user.oauth = user.oauth || {};
+        user.oauth[provider] = providerId;
+        await user.save();
+      }
+
+      user.lastLogin = new Date();
+      await user.save({ validateBeforeSave: false });
+
+      return createSendToken(
+        user,
+        200,
+        res,
+        `Login successful with ${provider}`
+      );
+    }
+
+    // Regular login
+    if (!email || !password) {
       return res.status(400).json({
         success: false,
-        message: 'Validation failed',
-        errors: errors.array(),
+        message: 'Email and password are required',
       });
     }
 
-    const { email, password } = req.body;
-
-    // Check if user exists and password is correct
     const user = await User.findOne({ email }).select('+password');
-
     if (!user || !(await user.correctPassword(password, user.password))) {
       return res.status(401).json({
         success: false,
@@ -120,18 +147,15 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Update last login
     user.lastLogin = new Date();
     await user.save({ validateBeforeSave: false });
 
-    // Send token response
-    createSendToken(user, 200, res, 'Login successful');
+    return createSendToken(user, 200, res, 'Login successful');
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({
       success: false,
-      message: 'Internal server error',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      message: 'Server error during login',
     });
   }
 };
