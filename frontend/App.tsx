@@ -7,14 +7,10 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import ApiService from './services/api';
 
 // Import screens
-import HomeScreen from './screens/HomeScreen';
-import LoginScreen from './screens/LoginScreen';
-import SignUpScreen from './screens/SignUpScreen';
-import WelcomeScreen from './screens/WelcomeScreen';
-
 import MentalCheckInScreen from 'screens/MentalCheckInScreen';
 import MentalHealthFacts from 'screens/MentalHealthFactsScreen';
 import StressDetectorScreen from 'screens/StressDetectorScreen';
+import VerifyOtpScreen from 'screens/VerifyOtpScreen';
 import WeeklySummaryScreen from 'screens/WeeklySummaryScreen';
 import {
   cancelDailyReminder,
@@ -23,6 +19,12 @@ import {
 } from 'services/DailyNotifications';
 import { navigationRef } from 'services/NavigationRef';
 import './global.css';
+import ForgotPasswordScreen from './screens/ForgotPasswordScreen';
+import HomeScreen from './screens/HomeScreen';
+import LoginScreen from './screens/LoginScreen';
+import ResetPasswordScreen from './screens/ResetPasswordScreen';
+import SignUpScreen from './screens/SignUpScreen';
+import WelcomeScreen from './screens/WelcomeScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -78,6 +80,52 @@ export default function App() {
               <Stack.Screen name="SignUp">
                 {(props) => <SignUpScreen {...props} setIsAuthenticated={setIsAuthenticated} />}
               </Stack.Screen>
+              {/* Move ForgotPassword and ResetPassword here - they're for non-authenticated users */}
+              <Stack.Screen
+                name="ForgotPassword"
+                component={ForgotPasswordScreen}
+                options={{
+                  headerShown: true,
+                  title: 'Forgot Password',
+                  headerStyle: {
+                    backgroundColor: '#6366f1',
+                  },
+                  headerTintColor: '#fff',
+                  headerTitleStyle: {
+                    fontWeight: 'bold',
+                  },
+                }}
+              />
+              <Stack.Screen
+                name="ResetPassword"
+                component={ResetPasswordScreen}
+                options={{
+                  headerShown: true,
+                  title: 'Reset Password',
+                  headerStyle: {
+                    backgroundColor: '#6366f1',
+                  },
+                  headerTintColor: '#fff',
+                  headerTitleStyle: {
+                    fontWeight: 'bold',
+                  },
+                }}
+              />
+              <Stack.Screen
+                name="VerifyOtp"
+                component={VerifyOtpScreen}
+                options={{
+                  headerShown: true,
+                  title: 'Verify OTP',
+                  headerStyle: {
+                    backgroundColor: '#6366f1',
+                  },
+                  headerTintColor: '#fff',
+                  headerTitleStyle: {
+                    fontWeight: 'bold',
+                  },
+                }}
+              />
             </>
           ) : (
             <>

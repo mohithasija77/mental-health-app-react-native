@@ -178,6 +178,114 @@ class ApiService {
       return false;
     }
   }
+
+  // OTP-based Password Reset Methods
+  async forgotPassword(data) {
+    try {
+      const response = await fetch(`${this.baseURL}/auth/forgot-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      const responseData = await response.json();
+
+      return {
+        success: response.ok,
+        data: responseData,
+        status: response.status,
+      };
+    } catch (error) {
+      console.error('Forgot password API error:', error);
+
+      if (error.message === 'Network request failed' || error.name === 'TypeError') {
+        return {
+          success: false,
+          networkError: true,
+          error: 'Network connection failed',
+        };
+      }
+
+      return {
+        success: false,
+        error: error.message || 'An unexpected error occurred',
+      };
+    }
+  }
+
+  // NEW: Verify OTP method
+  async verifyOtp(data) {
+    try {
+      const response = await fetch(`${this.baseURL}/auth/verify-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      const responseData = await response.json();
+
+      return {
+        success: response.ok,
+        data: responseData,
+        status: response.status,
+      };
+    } catch (error) {
+      console.error('Verify OTP API error:', error);
+
+      if (error.message === 'Network request failed' || error.name === 'TypeError') {
+        return {
+          success: false,
+          networkError: true,
+          error: 'Network connection failed',
+        };
+      }
+
+      return {
+        success: false,
+        error: error.message || 'An unexpected error occurred',
+      };
+    }
+  }
+
+  // UPDATED: Reset password now uses email and OTP instead of token
+  async resetPassword(data) {
+    try {
+      const response = await fetch(`${this.baseURL}/auth/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      const responseData = await response.json();
+
+      return {
+        success: response.ok,
+        data: responseData,
+        status: response.status,
+      };
+    } catch (error) {
+      console.error('Reset password API error:', error);
+
+      if (error.message === 'Network request failed' || error.name === 'TypeError') {
+        return {
+          success: false,
+          networkError: true,
+          error: 'Network connection failed',
+        };
+      }
+
+      return {
+        success: false,
+        error: error.message || 'An unexpected error occurred',
+      };
+    }
+  }
 }
 
 // Export singleton instance

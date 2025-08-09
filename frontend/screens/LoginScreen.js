@@ -130,7 +130,7 @@ export default function LoginScreen({ setIsAuthenticated }) {
   };
 
   const handleForgotPassword = () => {
-    Alert.alert('Forgot Password', 'Password reset functionality will be available soon!');
+    navigation.navigate('ForgotPassword');
   };
 
   return (

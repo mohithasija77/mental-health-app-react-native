@@ -9,6 +9,9 @@ const { validateSignup, validateLogin } = require('../middleware/validation');
 // Public routes
 router.post('/signup', validateSignup, authController.signup);
 router.post('/login', validateLogin, authController.login);
+router.post('/forgot-password', authController.forgotPassword);
+router.post('/verify-otp', authController.verifyOtp);
+router.post('/reset-password', authController.resetPassword);
 
 // Protected routes
 router.use(protect); // All routes after this middleware are protected
