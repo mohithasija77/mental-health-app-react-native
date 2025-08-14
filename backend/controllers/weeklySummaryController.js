@@ -241,34 +241,75 @@ const weeklySummaryController = {
 
       const dailyCheckinIds = weeklyData.map((d) => d._id);
 
-      // Step 6: Save or update summary
-      if (existingSummary) {
-        existingSummary.summary = summaryData;
-        existingSummary.dailyCheckinIds = dailyCheckinIds;
-        existingSummary.weekEndDate = endOfWeek;
-        existingSummary.lastUpdated = new Date();
-        const updated = await existingSummary.save();
+      // Step 6: Save or update summary (Fixed to handle race conditions)
+      try {
+        const savedSummary = await WeeklySummary.findOneAndUpdate(
+          {
+            userId,
+            weekStartDate: startOfWeek,
+          },
+          {
+            userId,
+            weekStartDate: startOfWeek,
+            weekEndDate: endOfWeek,
+            summary: summaryData,
+            dailyCheckinIds: dailyCheckinIds,
+            lastUpdated: new Date(),
+          },
+          {
+            upsert: true,
+            new: true,
+            setDefaultsOnInsert: true,
+          }
+        );
 
-        console.log('✅ Updated existing weekly summary');
+        const action = existingSummary ? 'Updated' : 'Created';
+        console.log(`✅ ${action} weekly summary`);
+
         return res.json({
           success: true,
-          weeklySummary: { ...summaryData, timestamp: updated.lastUpdated },
+          weeklySummary: {
+            ...summaryData,
+            timestamp: savedSummary.lastUpdated,
+          },
         });
-      } else {
-        const saved = await WeeklySummary.create({
-          userId,
-          weekStartDate: startOfWeek,
-          weekEndDate: endOfWeek,
-          summary: summaryData,
-          dailyCheckinIds: dailyCheckinIds,
-          lastUpdated: new Date(),
-        });
+      } catch (updateError) {
+        // Handle duplicate key error specifically
+        if (updateError.code === 11000) {
+          console.log(
+            '🔄 Duplicate key detected, retrying with update only...'
+          );
 
-        console.log('✅ Created new weekly summary');
-        return res.json({
-          success: true,
-          weeklySummary: { ...summaryData, timestamp: saved.lastUpdated },
-        });
+          // Retry with update only (no upsert)
+          const updatedSummary = await WeeklySummary.findOneAndUpdate(
+            {
+              userId,
+              weekStartDate: startOfWeek,
+            },
+            {
+              weekEndDate: endOfWeek,
+              summary: summaryData,
+              dailyCheckinIds: dailyCheckinIds,
+              lastUpdated: new Date(),
+            },
+            { new: true }
+          );
+
+          if (updatedSummary) {
+            console.log('✅ Updated weekly summary after retry');
+            return res.json({
+              success: true,
+              weeklySummary: {
+                ...summaryData,
+                timestamp: updatedSummary.lastUpdated,
+              },
+            });
+          } else {
+            throw new Error('Failed to update existing summary');
+          }
+        }
+
+        throw updateError; // Re-throw other errors
       }
     } catch (error) {
       console.error('❌ Error generating weekly summary:', error);
@@ -403,21 +444,6 @@ function calculateWeeklyAnalytics(weeklyData) {
     return worst;
   }, null);
 
-  // Determine wellness score trend with safety checks
-  const firstHalf = weeklyData.slice(0, Math.ceil(totalDays / 2));
-  const secondHalf = weeklyData.slice(Math.ceil(totalDays / 2));
-
-  const firstHalfAvg =
-    firstHalf.reduce((sum, day) => sum + (day.wellnessScore || 0), 0) /
-    firstHalf.length;
-  const secondHalfAvg =
-    secondHalf.reduce((sum, day) => sum + (day.wellnessScore || 0), 0) /
-    secondHalf.length;
-
-  let wellnessScoreTrend = 'stable';
-  if (secondHalfAvg > firstHalfAvg + 0.5) wellnessScoreTrend = 'improving';
-  else if (secondHalfAvg < firstHalfAvg - 0.5) wellnessScoreTrend = 'declining';
-
   // Key patterns
   const keyPatterns = [];
   if (avgStressLevel > 7)
@@ -425,17 +451,6 @@ function calculateWeeklyAnalytics(weeklyData) {
   if (avgSleepQuality < 5)
     keyPatterns.push('Poor sleep quality affecting wellness');
   if (avgWellnessScore > 7) keyPatterns.push('Strong overall mental wellness');
-
-  // Basic recommendations
-  const recommendations = [];
-  if (avgStressLevel > 6)
-    recommendations.push('Consider stress management techniques');
-  if (avgSleepQuality < 6)
-    recommendations.push('Focus on improving sleep hygiene');
-  if (wellnessScoreTrend === 'declining')
-    recommendations.push(
-      'Monitor mood patterns and consider additional support'
-    );
 
   return {
     startDate: weeklyData[0]?.date || new Date().toISOString(),
@@ -446,18 +461,20 @@ function calculateWeeklyAnalytics(weeklyData) {
     avgSleepQuality,
     avgStressLevel,
     moodFrequency,
-    wellnessScoreTrend,
     bestDay,
     challengingDay,
     keyPatterns,
-    recommendations,
   };
 }
 // Generate AI insights for weekly summary (same as before)
 async function generateWeeklyAIInsights(weeklyData, analytics) {
   try {
     const prompt = `
-    Analyze this weekly mental health data and summarize only key trends and patterns in ~50 words.
+    Analyze this weekly mental health data and output exactly:
+    Line 1: Key trends and patterns in 50 words. No numbering, no markdown, no extra commentary.
+    < 1 line space/gap inbetween >
+    Line 2: The wellness trend in one word (improving, declining, stable, or mixed). 
+       Output exactly in this format: Weekly Trend: <OneWord>
     
     Weekly Overview:
     - Average wellness score: ${analytics.avgWellnessScore}/10
@@ -478,6 +495,7 @@ async function generateWeeklyAIInsights(weeklyData, analytics) {
       .join('\n')}
     
     Exclude recommendations or motivational text. Focus only on noticeable patterns and trends.
+    Return only the two lines with small gap inbetween as specified.
     `;
 
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
@@ -518,31 +536,18 @@ function generateQuickMoodResponse(mood, intensity, trigger, needsSupport) {
   return response;
 }
 
-// Fallback weekly insights (same as before)
+// Fallback weekly insights (trends and patterns only)
 function generateFallbackWeeklyInsights(analytics) {
-  let insights = `Looking at your week, your average wellness score was ${analytics.avgWellnessScore}/10. `;
+  let insights = `Your average wellness score this week was ${analytics.avgWellnessScore}/10. `;
 
-  if (analytics.wellnessScoreTrend === 'improving') {
-    insights += "I'm pleased to see your wellness trending upward this week! ";
-  } else if (analytics.wellnessScoreTrend === 'declining') {
-    insights +=
-      "I notice your wellness has been declining this week. This is a normal part of life's ups and downs. ";
+  if (analytics.avgStressLevel) {
+    insights += `Your average stress level was ${analytics.avgStressLevel}/10. `;
   }
 
-  if (analytics.avgStressLevel > 6) {
-    insights +=
-      'Your stress levels have been elevated. Consider incorporating stress-reduction activities into your daily routine. ';
+  if (analytics.avgSleepQuality) {
+    insights += `Your average sleep quality was ${analytics.avgSleepQuality}/10. `;
   }
-
-  if (analytics.avgSleepQuality < 6) {
-    insights +=
-      'Your sleep quality could benefit from attention, as good sleep is foundational to mental wellness. ';
-  }
-
-  insights +=
-    'Remember that mental health is a journey, and every small step toward self-care matters.';
 
   return insights;
 }
-
 module.exports = weeklySummaryController;

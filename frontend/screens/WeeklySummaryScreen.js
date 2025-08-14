@@ -230,7 +230,6 @@ const WeeklySummaryScreen = () => {
           },
         },
         trends: {
-          wellnessScoreTrend: weeklySummary.trends?.wellnessScoreTrend || 'stable',
           moodFrequency: weeklySummary.trends?.moodFrequency || {},
           bestDay: weeklySummary.trends?.bestDay || null,
           challengingDay: weeklySummary.trends?.challengingDay || null,
@@ -502,7 +501,7 @@ const WeeklySummaryScreen = () => {
                   </View>
 
                   {/* Trend - Only show if trend exists */}
-                  {weeklySummary.trends?.wellnessScoreTrend && (
+                  {/* {weeklyTrend && (
                     <View className="mt-3 flex-row items-center">
                       <Icon
                         name={getTrendIcon(weeklySummary.trends.wellnessScoreTrend).name}
@@ -510,10 +509,10 @@ const WeeklySummaryScreen = () => {
                         color={getTrendIcon(weeklySummary.trends.wellnessScoreTrend).color}
                       />
                       <Text className="ml-2 flex-1 capitalize text-gray-600" numberOfLines={1}>
-                        Wellness trend: {weeklySummary.trends.wellnessScoreTrend}
+                        Wellness trend: {weeklyTrend}
                       </Text>
                     </View>
-                  )}
+                  )} */}
                 </View>
 
                 {/* Mood Distribution - Only show if mood data exists */}

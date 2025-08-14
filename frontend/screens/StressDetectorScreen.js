@@ -106,6 +106,12 @@ const StressDetectorScreen = ({ onBack }) => {
     },
   ];
 
+  const goBackQuestion = () => {
+    if (currentQuestion > 0) {
+      setCurrentQuestion(currentQuestion - 1);
+    }
+  };
+
   const handleAnswer = (value) => {
     const newAnswers = { ...answers, [questions[currentQuestion].id]: value };
     setAnswers(newAnswers);
@@ -165,6 +171,19 @@ const StressDetectorScreen = ({ onBack }) => {
 
     return (
       <View style={styles.questionContainer}>
+        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 20 }}>
+          {currentQuestion > 0 && (
+            <TouchableOpacity
+              onPress={goBackQuestion}
+              style={{
+                backgroundColor: 'rgba(255,255,255,0.2)',
+                padding: 12,
+                borderRadius: 12,
+              }}>
+              <Text style={{ color: 'white' }}>Back</Text>
+            </TouchableOpacity>
+          )}
+        </View>
         <Text style={styles.questionText}>{question.question}</Text>
 
         {question.type === 'emoji' && (
@@ -205,7 +224,12 @@ const StressDetectorScreen = ({ onBack }) => {
               <TouchableOpacity
                 key={idx}
                 onPress={() => handleAnswer(option.value)}
-                style={styles.scaleButton}>
+                style={[
+                  styles.scaleButton,
+                  answers[question.id] === option.value && {
+                    backgroundColor: 'rgba(255,255,255,0.5)',
+                  },
+                ]}>
                 <Text style={styles.scaleLabel}>{option.label}</Text>
               </TouchableOpacity>
             ))}
@@ -237,7 +261,7 @@ const StressDetectorScreen = ({ onBack }) => {
     return (
       <ScrollView contentContainerStyle={styles.resultsContainer}>
         <Text style={styles.resultsTitle}>Your Stress Analysis 📊</Text>
-        <Text style={styles.resultsLevel}>Stress Level: {analysis.stressLevel}/10</Text>
+        <Text style={styles.resultsLevel}>Stress Level: {analysis.stressLevel}</Text>
 
         <View style={styles.analysisBox}>
           <Text style={styles.analysisTitle}>Analysis</Text>
