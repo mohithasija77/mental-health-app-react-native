@@ -1,4 +1,4 @@
-const { body } = require('express-validator');
+const { body, validationResult } = require('express-validator');
 
 // Validation rules for user signup
 exports.validateSignup = [
@@ -68,4 +68,51 @@ exports.validatePasswordChange = [
       }
       return true;
     }),
+];
+
+// Validation middleware for Google OAuth requests
+exports.validateGoogleAuth = [
+  body('email')
+    .isEmail()
+    .withMessage('Valid email is required')
+    .normalizeEmail(),
+
+  body('googleId')
+    .notEmpty()
+    .withMessage('Google ID is required')
+    .isLength({ min: 1 })
+    .withMessage('Google ID cannot be empty'),
+
+  body('name')
+    .optional()
+    .isLength({ min: 1, max: 100 })
+    .withMessage('Name must be between 1 and 100 characters'),
+
+  body('firstName')
+    .optional()
+    .isLength({ min: 1, max: 50 })
+    .withMessage('First name must be between 1 and 50 characters'),
+
+  body('lastName')
+    .optional()
+    .isLength({ min: 1, max: 50 })
+    .withMessage('Last name must be between 1 and 50 characters'),
+
+  body('profilePicture')
+    .optional()
+    .isURL()
+    .withMessage('Profile picture must be a valid URL'),
+
+  // Validation error handler
+  (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array(),
+      });
+    }
+    next();
+  },
 ];

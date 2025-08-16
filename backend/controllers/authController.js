@@ -405,3 +405,220 @@ exports.resetPassword = async (req, res) => {
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
+
+exports.googleSignup = async (req, res) => {
+  try {
+    const { email, name, firstName, lastName, profilePicture, googleId } =
+      req.body;
+
+    // Validation
+    if (!email || !googleId) {
+      console.log('❌ Validation failed - missing required fields', {
+        hasEmail: !!email,
+        hasGoogleId: !!googleId,
+      });
+      return res.status(400).json({
+        success: false,
+        message: 'Email and Google ID are required',
+      });
+    }
+
+    const existingUser = await User.findOne({ email });
+
+    if (existingUser) {
+      console.log('❌ User already exists with this email', {
+        existingUserId: existingUser._id,
+        existingUserEmail: existingUser.email,
+        existingUserAuthProvider: existingUser.authProvider,
+      });
+      return res.status(400).json({
+        success: false,
+        message:
+          'User with this email already exists. Please try logging in instead.',
+      });
+    }
+
+    // Check if Google account is already linked
+
+    const existingGoogleUser = await User.findOne({ googleId });
+
+    if (existingGoogleUser) {
+      console.log('❌ Google account already registered', {
+        existingGoogleUserId: existingGoogleUser._id,
+        existingGoogleUserEmail: existingGoogleUser.email,
+      });
+      return res.status(400).json({
+        success: false,
+        message: 'This Google account is already registered.',
+      });
+    }
+
+    // Create new user with Google OAuth data
+    const userData = {
+      email,
+      name: name || `${firstName} ${lastName}`.trim(),
+      firstName,
+      lastName,
+      profilePicture,
+      googleId,
+      authProvider: 'google',
+      isEmailVerified: true, // Google accounts are pre-verified
+    };
+
+    const newUser = new User(userData);
+    const savedUser = await newUser.save();
+
+    // Generate JWT token
+    console.log('🔑 Generating JWT token');
+    const token = jwt.sign(
+      {
+        userId: savedUser._id,
+        email: savedUser.email,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+
+    console.log('✅ JWT token generated');
+
+    // Remove sensitive data before sending response
+    const userResponse = {
+      id: savedUser._id,
+      email: savedUser.email,
+      name: savedUser.name,
+      firstName: savedUser.firstName,
+      lastName: savedUser.lastName,
+      profilePicture: savedUser.profilePicture,
+      authProvider: savedUser.authProvider,
+      isEmailVerified: savedUser.isEmailVerified,
+      createdAt: savedUser.createdAt,
+    };
+
+    res.status(201).json({
+      success: true,
+      message: 'Account created successfully with Google',
+      data: {
+        user: userResponse,
+        token,
+      },
+    });
+  } catch (error) {
+    console.log('❌ Google signup error occurred', {
+      errorMessage: error.message,
+      errorStack: error.stack,
+      errorName: error.name,
+    });
+
+    res.status(500).json({
+      success: false,
+      message: 'Server error during Google signup',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    });
+  }
+};
+
+// Replace your existing googleLogin function with this fixed version:
+exports.googleLogin = async (req, res) => {
+  try {
+    const { email, googleId } = req.body;
+
+    console.log('📊 Extracted data', { email, googleId });
+
+    // Validation
+    if (!email || !googleId) {
+      console.log('❌ Validation failed - missing required fields', {
+        hasEmail: !!email,
+        hasGoogleId: !!googleId,
+      });
+      return res.status(400).json({
+        success: false,
+        message: 'Email and Google ID are required',
+      });
+    }
+
+    // Find user by email or googleId
+
+    const user = await User.findOne({
+      $or: [
+        { email, googleId },
+        { email, authProvider: 'google' },
+        { googleId },
+      ],
+    });
+
+    if (!user) {
+      console.log('❌ No user found', {
+        searchEmail: email,
+        searchGoogleId: googleId,
+      });
+      return res.status(404).json({
+        success: false,
+        message:
+          'No account found with this Google account. Please sign up first.',
+      });
+    }
+
+    // If user exists but doesn't have googleId, link the account
+    if (!user.googleId) {
+      console.log('🔗 Linking Google account to existing user');
+      user.googleId = googleId;
+      user.authProvider = user.authProvider === 'email' ? 'both' : 'google';
+      await user.save();
+      console.log('✅ Google account linked successfully');
+    }
+
+    // Generate JWT token
+    console.log('🔑 Generating JWT token');
+    const token = jwt.sign(
+      {
+        userId: user._id,
+        email: user.email,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+
+    console.log('✅ JWT token generated');
+
+    // Remove sensitive data before sending response
+    const userResponse = {
+      id: user._id,
+      email: user.email,
+      name: user.name,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      profilePicture: user.profilePicture,
+      authProvider: user.authProvider,
+      isEmailVerified: user.isEmailVerified,
+      createdAt: user.createdAt,
+    };
+
+    console.log('📤 Sending success response', {
+      userId: userResponse.id,
+      hasToken: !!token,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Google login successful',
+      data: {
+        user: userResponse,
+        token,
+      },
+    });
+
+    console.log('✅ Google login completed successfully');
+  } catch (error) {
+    console.log('❌ Google login error occurred', {
+      errorMessage: error.message,
+      errorStack: error.stack,
+      errorName: error.name,
+    });
+
+    res.status(500).json({
+      success: false,
+      message: 'Server error during Google login',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    });
+  }
+};

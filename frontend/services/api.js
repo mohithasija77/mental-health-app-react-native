@@ -279,14 +279,66 @@ class ApiService {
           error: 'Network connection failed',
         };
       }
+    }
+  }
+
+  // FIXED: Google Signup - Use AUTH_BASE_URL consistently
+  async googleSignup(googleUserData) {
+    try {
+      // FIXED: Use AUTH_BASE_URL instead of API_BASE_URL
+      const response = await fetch(`${AUTH_BASE_URL}/auth/google-signup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(googleUserData),
+      });
+
+      const data = await response.json();
 
       return {
+        success: response.ok,
+        data,
+        error: !response.ok ? data.message || 'Google signup failed' : null,
+      };
+    } catch (error) {
+      console.error('Google signup network error:', error);
+      return {
         success: false,
-        error: error.message || 'An unexpected error occurred',
+        networkError: true,
+        error: 'Network error during Google signup',
+      };
+    }
+  }
+
+  // FIXED: Google Login - Use AUTH_BASE_URL consistently
+  async googleLogin(googleUserData) {
+    try {
+      // FIXED: Use AUTH_BASE_URL instead of API_BASE_URL
+      const response = await fetch(`${AUTH_BASE_URL}/auth/google-login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(googleUserData),
+      });
+
+      const data = await response.json();
+
+      return {
+        success: response.ok,
+        data,
+        error: !response.ok ? data.message || 'Google login failed' : null,
+      };
+    } catch (error) {
+      console.error('Google login network error:', error);
+      return {
+        success: false,
+        networkError: true,
+        error: 'Network error during Google login',
       };
     }
   }
 }
-
 // Export singleton instance
 export default new ApiService();

@@ -1,10 +1,10 @@
 import { useNavigation } from '@react-navigation/native';
+import GoogleOAuthButton from 'components/Google0AuthButton';
 import LottieView from 'lottie-react-native';
 import { useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { scheduleDailyReminder } from 'services/DailyNotifications';
-import OAuthLoginButtons from '../components/OAuthLoginButtons';
 import ApiService from '../services/api'; // Adjust path as needed
 
 export default function LoginScreen({ setIsAuthenticated }) {
@@ -209,23 +209,9 @@ export default function LoginScreen({ setIsAuthenticated }) {
         </TouchableOpacity>
       </View>
 
-      {/* Social Login Options */}
-      <OAuthLoginButtons
-        onSuccess={async () => {
-          try {
-            setIsAuthenticated(true);
-            await scheduleDailyReminder();
-
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'Home' }],
-            });
-          } catch (error) {
-            console.log('OAuth navigation error:', error);
-          }
-        }}
-        loading={loading}
-      />
+      <GoogleOAuthButton setIsAuthenticated={setIsAuthenticated} mode="login" />
+      {/* TODO: Meeting with supervisor to confirm questions regarding facebook auth login before Implementing */}
+      {/* <FacebookOAuthButton setIsAuthenticated={setIsAuthenticated} /> */}
 
       <View className="mt-6 flex-row justify-center">
         <Text className="text-gray-500">Don't have an account?</Text>

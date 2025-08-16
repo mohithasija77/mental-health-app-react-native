@@ -21,7 +21,9 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: [true, 'Please provide a password'],
+      required: function () {
+        return this.authProvider === 'local'; // only require password for normal signup
+      },
       minlength: [6, 'Password must be at least 6 characters'],
       select: false, // Don't return password in queries by default
     },
@@ -50,11 +52,29 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: undefined,
     },
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true, // Allows null values but enforces uniqueness for non-null values
+    },
+    authProvider: {
+      type: String,
+      enum: ['email', 'google', 'both'],
+      default: 'email',
+    },
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true, // Adds createdAt and updatedAt
   }
 );
+
+// Index for faster queries
+userSchema.index({ email: 1 });
+userSchema.index({ googleId: 1 });
 
 // Hash password before saving
 userSchema.pre('save', async function (next) {
@@ -84,6 +104,30 @@ userSchema.methods.toJSON = function () {
   const userObject = this.toObject();
   delete userObject.password;
   return userObject;
+};
+
+// Method to compare password (for email/password login)
+userSchema.methods.comparePassword = async function (candidatePassword) {
+  if (!this.password) {
+    return false; // No password set (Google OAuth user)
+  }
+  return bcrypt.compare(candidatePassword, this.password);
+};
+
+// Method to check if user can login with password
+userSchema.methods.canLoginWithPassword = function () {
+  return (
+    this.password &&
+    (this.authProvider === 'email' || this.authProvider === 'both')
+  );
+};
+
+// Method to check if user can login with Google
+userSchema.methods.canLoginWithGoogle = function () {
+  return (
+    this.googleId &&
+    (this.authProvider === 'google' || this.authProvider === 'both')
+  );
 };
 
 module.exports = mongoose.model('User', userSchema);

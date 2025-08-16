@@ -1,7 +1,8 @@
 {
   "expo": {
     "name": "my-expo-app",
-    "slug": "my-expo-app",
+    "slug": "mental-health-slug",
+    "scheme": "mentalhealth",
     "version": "1.0.0",
     "web": {
       "favicon": "./assets/favicon.png"
@@ -23,9 +24,10 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.my-expo-app"
+      "bundleIdentifier": "com.mohithasija.mentalhealthapp"
     },
     "android": {
+      "package": "com.mohithasija.mentalhealthapp",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"

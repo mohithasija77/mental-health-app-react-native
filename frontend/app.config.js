@@ -5,6 +5,12 @@ export default {
     name: 'mental-health-app',
     slug: 'mental-health-slug',
     version: '1.0.0',
+    ios: {
+      bundleIdentifier: 'com.mohithasija.mentalhealthapp',
+    },
+    android: {
+      package: 'com.mohithasija.mentalhealthapp',
+    },
     extra: {
       API_BASE_URL: process.env.API_BASE_URL,
       GOOGLE_IOS_CLIENT_ID: process.env.GOOGLE_IOS_CLIENT_ID,

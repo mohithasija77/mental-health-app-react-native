@@ -12,11 +12,7 @@ import MentalHealthFacts from 'screens/MentalHealthFactsScreen';
 import StressDetectorScreen from 'screens/StressDetectorScreen';
 import VerifyOtpScreen from 'screens/VerifyOtpScreen';
 import WeeklySummaryScreen from 'screens/WeeklySummaryScreen';
-import {
-  cancelDailyReminder,
-  handleNotificationResponse,
-  scheduleDailyReminder,
-} from 'services/DailyNotifications';
+import { cancelDailyReminder, handleNotificationResponse } from 'services/DailyNotifications';
 import { navigationRef } from 'services/NavigationRef';
 import './global.css';
 import ForgotPasswordScreen from './screens/ForgotPasswordScreen';
@@ -36,7 +32,7 @@ export default function App() {
   const checkAuth = async () => {
     const authenticated = await ApiService.isAuthenticated();
     setIsAuthenticated(authenticated);
-    await scheduleDailyReminder();
+    // await scheduleDailyReminder();
     setLoading(false);
   };
 
