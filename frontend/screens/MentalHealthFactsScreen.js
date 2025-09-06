@@ -175,6 +175,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingTop: 50,
     paddingBottom: 20,
+    marginTop: 15,
   },
   backButton: { padding: 8 },
   headerTitle: { fontSize: 24, fontWeight: 'bold', color: '#fff' },

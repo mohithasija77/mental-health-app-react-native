@@ -194,22 +194,23 @@ export default function LoginScreen({ setIsAuthenticated }) {
         <TouchableOpacity onPress={handleForgotPassword} disabled={loading} className="mb-2">
           <Text className="text-right text-sm text-indigo-600">Forgot Password?</Text>
         </TouchableOpacity>
+        <View className="space-y-2">
+          <TouchableOpacity
+            onPress={handleLogin}
+            disabled={loading}
+            className={`mt-2 rounded-full py-4 shadow-lg ${
+              loading ? 'bg-indigo-300' : 'bg-indigo-500'
+            }`}>
+            {loading ? (
+              <ActivityIndicator color="white" size="small" />
+            ) : (
+              <Text className="text-center text-base font-semibold text-white">LOGIN</Text>
+            )}
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={handleLogin}
-          disabled={loading}
-          className={`mt-2 rounded-full py-4 shadow-lg ${
-            loading ? 'bg-indigo-300' : 'bg-indigo-500'
-          }`}>
-          {loading ? (
-            <ActivityIndicator color="white" size="small" />
-          ) : (
-            <Text className="text-center text-base font-semibold text-white">LOGIN</Text>
-          )}
-        </TouchableOpacity>
+          <GoogleOAuthButton setIsAuthenticated={setIsAuthenticated} mode="login" />
+        </View>
       </View>
-
-      <GoogleOAuthButton setIsAuthenticated={setIsAuthenticated} mode="login" />
       {/* TODO: Meeting with supervisor to confirm questions regarding facebook auth login before Implementing */}
       {/* <FacebookOAuthButton setIsAuthenticated={setIsAuthenticated} /> */}
 

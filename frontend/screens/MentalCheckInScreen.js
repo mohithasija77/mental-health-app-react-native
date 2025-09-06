@@ -27,7 +27,7 @@ export default function MentalCheckInScreen() {
   const [feelingScale, setFeelingScale] = useState(5);
   const [sleepQuality, setSleepQuality] = useState(5);
   const [stressLevel, setStressLevel] = useState(5);
-  const [mood, setMood] = useState('anxious');
+  const [mood, setMood] = useState('happy');
   const [recentEvents, setRecentEvents] = useState('');
   const [additionalNotes, setAdditionalNotes] = useState('');
   const [isOpen, setIsOpen] = useState(false);
@@ -206,6 +206,15 @@ export default function MentalCheckInScreen() {
         const { analysis } = data;
 
         setHasCheckedInToday(true);
+
+        // --- RESET FORM STATES ---
+        setFeelingScale(5); // default value
+        setSleepQuality(5); // default value
+        setStressLevel(5); // default value
+        setMood('happy'); // default mood
+        setRecentEvents('');
+        setAdditionalNotes('');
+        setIsOpen(false); // close mood dropdown if open
 
         const message = `
   Daily Score: ${analysis.dataInsights.wellnessScore}/10

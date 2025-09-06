@@ -330,7 +330,13 @@ export default StressDetectorScreen;
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#5A67D8' },
-  header: { flexDirection: 'row', alignItems: 'center', paddingTop: 40, paddingHorizontal: 16 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingTop: 40,
+    paddingHorizontal: 16,
+    marginTop: 15,
+  },
   backButton: { marginRight: 8, padding: 8 },
   headerTitle: { color: 'white', fontSize: 20, fontWeight: 'bold' },
   progressContainer: { paddingHorizontal: 16, marginVertical: 8 },

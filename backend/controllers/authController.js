@@ -232,29 +232,10 @@ exports.forgotPassword = async (req, res) => {
     user.resetPasswordOtp = hashedOtp;
     user.resetPasswordExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
 
-    // Debug: Log user object before save
-    console.log('User before save:', {
-      email: user.email,
-      resetPasswordOtp: user.resetPasswordOtp,
-      resetPasswordExpires: user.resetPasswordExpires,
-    });
-
     const savedUser = await user.save({ validateBeforeSave: false });
-
-    // Debug: Log user object after save
-    console.log('User after save:', {
-      email: savedUser.email,
-      resetPasswordOtp: savedUser.resetPasswordOtp,
-      resetPasswordExpires: savedUser.resetPasswordExpires,
-    });
 
     // Double check by fetching from database
     const verifyUser = await User.findOne({ email });
-    console.log('User verified from DB:', {
-      email: verifyUser.email,
-      resetPasswordOtp: verifyUser.resetPasswordOtp,
-      resetPasswordExpires: verifyUser.resetPasswordExpires,
-    });
 
     const message = `Your password reset OTP is: ${otp}\n\nThis OTP will expire in 10 minutes.\n\nIf you didn't request this, please ignore this email.`;
 
@@ -263,8 +244,6 @@ exports.forgotPassword = async (req, res) => {
       subject: 'Password Reset OTP',
       text: message,
     });
-
-    console.log('Reset OTP sent to:', user.email);
 
     res.status(200).json({
       success: true,
@@ -280,7 +259,6 @@ exports.forgotPassword = async (req, res) => {
 exports.verifyOtp = async (req, res) => {
   try {
     const { email, otp } = req.body;
-    console.log('Verifying OTP request:', { email, otp, otpType: typeof otp });
 
     if (!email || !otp) {
       console.log('Missing email or OTP');
@@ -291,21 +269,17 @@ exports.verifyOtp = async (req, res) => {
 
     // Convert OTP to string and trim any whitespace
     const otpString = otp.toString().trim();
-    console.log('OTP after string conversion and trim:', otpString);
 
     // Hash the provided OTP
     const hashedOtp = crypto
       .createHash('sha256')
       .update(otpString)
       .digest('hex');
-    console.log('Hashed provided OTP:', hashedOtp);
 
     const user = await User.findOne({
       email,
       resetPasswordExpires: { $gt: Date.now() },
     });
-
-    console.log('User found for email:', user ? user.email : 'No user found');
 
     if (!user) {
       console.log('No user found with email or OTP expired');
@@ -314,27 +288,11 @@ exports.verifyOtp = async (req, res) => {
         .json({ success: false, message: 'Invalid email or OTP expired' });
     }
 
-    // Debug: Check all possible OTP field names
-    console.log('All user OTP-related fields:', {
-      resetPasswordOtp: user.resetPasswordOtp,
-      resetPasswordToken: user.resetPasswordToken, // Check if you accidentally used the old field
-      passwordResetOtp: user.passwordResetOtp, // Alternative naming
-      otp: user.otp, // Simple naming
-    });
-
-    console.log('Stored hashed OTP:', user.resetPasswordOtp);
-    console.log('Current time:', new Date(Date.now()));
-    console.log('OTP expires at:', new Date(user.resetPasswordExpires));
-    console.log('OTP valid?', Date.now() < user.resetPasswordExpires);
-    console.log('Hashes match?', user.resetPasswordOtp === hashedOtp);
-
     // Check if OTP matches
     if (user.resetPasswordOtp !== hashedOtp) {
       console.log('OTP does not match');
       return res.status(400).json({ success: false, message: 'Invalid OTP' });
     }
-
-    console.log('OTP verified successfully for user:', user.email);
 
     res.status(200).json({
       success: true,
@@ -350,11 +308,6 @@ exports.verifyOtp = async (req, res) => {
 exports.resetPassword = async (req, res) => {
   try {
     const { email, otp, newPassword } = req.body;
-    console.log('Reset password request:', {
-      email,
-      otp: !!otp,
-      newPassword: !!newPassword,
-    });
 
     if (!email || !otp || !newPassword) {
       console.log('Missing required fields');
@@ -372,15 +325,12 @@ exports.resetPassword = async (req, res) => {
       .createHash('sha256')
       .update(otpString)
       .digest('hex');
-    console.log('Hashed OTP for reset:', hashedOtp);
 
     const user = await User.findOne({
       email,
       resetPasswordOtp: hashedOtp,
       resetPasswordExpires: { $gt: Date.now() },
     });
-
-    console.log('User found for reset:', user ? user.email : 'No user found');
 
     if (!user) {
       return res
@@ -394,7 +344,6 @@ exports.resetPassword = async (req, res) => {
     user.resetPasswordExpires = undefined;
 
     await user.save();
-    console.log('Password updated for user:', user.email);
 
     res.status(200).json({
       success: true,
@@ -413,7 +362,7 @@ exports.googleSignup = async (req, res) => {
 
     // Validation
     if (!email || !googleId) {
-      console.log('❌ Validation failed - missing required fields', {
+      console.log('Validation failed - missing required fields', {
         hasEmail: !!email,
         hasGoogleId: !!googleId,
       });
@@ -426,7 +375,7 @@ exports.googleSignup = async (req, res) => {
     const existingUser = await User.findOne({ email });
 
     if (existingUser) {
-      console.log('❌ User already exists with this email', {
+      console.log('User already exists with this email', {
         existingUserId: existingUser._id,
         existingUserEmail: existingUser.email,
         existingUserAuthProvider: existingUser.authProvider,
@@ -437,8 +386,6 @@ exports.googleSignup = async (req, res) => {
           'User with this email already exists. Please try logging in instead.',
       });
     }
-
-    // Check if Google account is already linked
 
     const existingGoogleUser = await User.findOne({ googleId });
 
@@ -462,14 +409,13 @@ exports.googleSignup = async (req, res) => {
       profilePicture,
       googleId,
       authProvider: 'google',
-      isEmailVerified: true, // Google accounts are pre-verified
+      isEmailVerified: true,
     };
 
     const newUser = new User(userData);
     const savedUser = await newUser.save();
 
     // Generate JWT token
-    console.log('🔑 Generating JWT token');
     const token = jwt.sign(
       {
         userId: savedUser._id,
@@ -479,9 +425,6 @@ exports.googleSignup = async (req, res) => {
       { expiresIn: '30d' }
     );
 
-    console.log('✅ JWT token generated');
-
-    // Remove sensitive data before sending response
     const userResponse = {
       id: savedUser._id,
       email: savedUser.email,
@@ -517,16 +460,13 @@ exports.googleSignup = async (req, res) => {
   }
 };
 
-// Replace your existing googleLogin function with this fixed version:
 exports.googleLogin = async (req, res) => {
   try {
     const { email, googleId } = req.body;
 
-    console.log('📊 Extracted data', { email, googleId });
-
     // Validation
     if (!email || !googleId) {
-      console.log('❌ Validation failed - missing required fields', {
+      console.log('Validation failed - missing required fields', {
         hasEmail: !!email,
         hasGoogleId: !!googleId,
       });
@@ -547,7 +487,7 @@ exports.googleLogin = async (req, res) => {
     });
 
     if (!user) {
-      console.log('❌ No user found', {
+      console.log('No user found', {
         searchEmail: email,
         searchGoogleId: googleId,
       });
@@ -560,15 +500,14 @@ exports.googleLogin = async (req, res) => {
 
     // If user exists but doesn't have googleId, link the account
     if (!user.googleId) {
-      console.log('🔗 Linking Google account to existing user');
+      console.log('Linking Google account to existing user');
       user.googleId = googleId;
       user.authProvider = user.authProvider === 'email' ? 'both' : 'google';
       await user.save();
-      console.log('✅ Google account linked successfully');
+      console.log('Google account linked successfully');
     }
 
     // Generate JWT token
-    console.log('🔑 Generating JWT token');
     const token = jwt.sign(
       {
         userId: user._id,
@@ -578,9 +517,6 @@ exports.googleLogin = async (req, res) => {
       { expiresIn: '30d' }
     );
 
-    console.log('✅ JWT token generated');
-
-    // Remove sensitive data before sending response
     const userResponse = {
       id: user._id,
       email: user.email,
@@ -593,11 +529,6 @@ exports.googleLogin = async (req, res) => {
       createdAt: user.createdAt,
     };
 
-    console.log('📤 Sending success response', {
-      userId: userResponse.id,
-      hasToken: !!token,
-    });
-
     res.status(200).json({
       success: true,
       message: 'Google login successful',
@@ -606,10 +537,8 @@ exports.googleLogin = async (req, res) => {
         token,
       },
     });
-
-    console.log('✅ Google login completed successfully');
   } catch (error) {
-    console.log('❌ Google login error occurred', {
+    console.log('Google login error occurred', {
       errorMessage: error.message,
       errorStack: error.stack,
       errorName: error.name,
