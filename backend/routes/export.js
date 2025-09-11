@@ -15,24 +15,6 @@ router.post('/weekly-summary', async (req, res) => {
       });
     }
 
-    // You can save the export data to your database for audit purposes
-    const exportRecord = {
-      userId: exportData.exportInfo.userId,
-      exportType: 'weekly_summary',
-      exportDate: new Date(),
-      period: exportData.period,
-      dataExported: exportData,
-      // Add any other fields you want to track
-    };
-
-    // Optional: Save to your exports collection/table
-    // If you're using MongoDB:
-    // const Export = require('../models/Export'); // Create this model if needed
-    // await Export.create(exportRecord);
-
-    // If you're using a different database, adjust accordingly
-
-    // For now, just return success with the processed data
     const response = {
       success: true,
       message: 'Weekly summary exported successfully',
@@ -55,7 +37,6 @@ router.post('/weekly-summary', async (req, res) => {
       },
     };
 
-    // Log the export for monitoring
     console.log(
       `Weekly summary exported for user: ${exportData.exportInfo.userId}, Period: ${exportData.period.weekStart} - ${exportData.period.weekEnd}`
     );
@@ -76,11 +57,6 @@ router.get('/history/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
 
-    // Fetch export history from your database
-    // If you implement export tracking in your database:
-    // const exports = await Export.find({ userId }).sort({ exportDate: -1 }).limit(10);
-
-    // For now, return empty array
     res.json({
       success: true,
       exports: [], // Replace with actual export history when you implement it

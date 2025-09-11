@@ -43,7 +43,7 @@ export default function HomeScreen({ setIsAuthenticated, handleLogout }) {
   }, []);
 
   const [fontsLoaded] = useFonts({
-    Quicksand: require('../assets/fonts/static/Quicksand-Regular.ttf'), // Add your font here
+    Quicksand: require('../assets/fonts/static/Quicksand-Regular.ttf'),
     QuicksandBold: require('../assets/fonts/static/Quicksand-Bold.ttf'),
   });
 
@@ -60,7 +60,7 @@ export default function HomeScreen({ setIsAuthenticated, handleLogout }) {
         contentContainerStyle={{
           flexGrow: 1,
           justifyContent: 'center',
-          minHeight: height - 100, // Ensures content takes proper space
+          minHeight: height - 100,
           paddingVertical: 20,
         }}
         className="relative"

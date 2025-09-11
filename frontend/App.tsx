@@ -6,7 +6,6 @@ import { ActivityIndicator, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import ApiService from './services/api';
 
-// Import screens
 import MentalCheckInScreen from 'screens/MentalCheckInScreen';
 import MentalHealthFacts from 'screens/MentalHealthFactsScreen';
 import StressDetectorScreen from 'screens/StressDetectorScreen';
@@ -16,7 +15,6 @@ import { cancelDailyReminder, handleNotificationResponse } from 'services/DailyN
 import { navigationRef } from 'services/NavigationRef';
 import './global.css';
 import ForgotPasswordScreen from './screens/ForgotPasswordScreen';
-import HomeScreen from './screens/HomeScreen';
 import LoginScreen from './screens/LoginScreen';
 import ResetPasswordScreen from './screens/ResetPasswordScreen';
 import SignUpScreen from './screens/SignUpScreen';
@@ -44,7 +42,7 @@ export default function App() {
     const subscription = Notifications.addNotificationResponseReceivedListener(
       handleNotificationResponse
     );
-    return () => subscription.remove(); // ✅ Clean up
+    return () => subscription.remove();
   }, []);
 
   // Function to handle logout - this will be passed to screens that need it
@@ -76,7 +74,7 @@ export default function App() {
               <Stack.Screen name="SignUp">
                 {(props) => <SignUpScreen {...props} setIsAuthenticated={setIsAuthenticated} />}
               </Stack.Screen>
-              {/* Move ForgotPassword and ResetPassword here - they're for non-authenticated users */}
+              {/*ForgotPassword and ResetPassword are here because they're for non-authenticated users */}
               <Stack.Screen
                 name="ForgotPassword"
                 component={ForgotPasswordScreen}
@@ -134,9 +132,9 @@ export default function App() {
                   />
                 )}
               </Stack.Screen>
-              <Stack.Screen name="Home">
+              {/* <Stack.Screen name="Home">
                 {(props) => <HomeScreen {...props} handleLogout={handleLogout} />}
-              </Stack.Screen>
+              </Stack.Screen> */}
               <Stack.Screen name="MentalCheckIn" component={MentalCheckInScreen} />
               <Stack.Screen name="MentalHealthFacts" component={MentalHealthFacts} />
               <Stack.Screen name="StressDetector" component={StressDetectorScreen} />

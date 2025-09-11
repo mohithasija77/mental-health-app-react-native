@@ -17,7 +17,6 @@ export default function VerifyOtpScreen() {
   const [timer, setTimer] = useState(300); // 5 minutes countdown
   const [canResend, setCanResend] = useState(false);
 
-  // Refs for OTP inputs
   const otpRefs = useRef([]);
 
   useEffect(() => {

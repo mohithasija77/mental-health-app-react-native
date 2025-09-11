@@ -438,7 +438,7 @@ const styles = StyleSheet.create({
     color: 'white',
     position: 'absolute',
     top: '50%', // Use percentage for better centering
-    left: '50%', // Use percentage for better centering
+    left: '50%',
     transform: [{ translateX: -30 }, { translateY: -10 }], // Approximate centering
     fontSize: 16,
     fontWeight: '600',

@@ -77,17 +77,13 @@ export default function SignUpScreen({ setIsAuthenticated }) {
       }
 
       if (response.success && response.data?.success) {
-        // Fix: Handle different possible response structures
         let userData;
         let token;
 
-        // Check different possible response structures from your backend
         if (response.data.data?.user) {
-          // Structure: { success: true, data: { user: {...}, token: "..." } }
           userData = response.data.data.user;
           token = response.data.data.token || response.data.token;
         } else if (response.data.user) {
-          // Structure: { success: true, user: {...}, token: "..." }
           userData = response.data.user;
           token = response.data.token;
         } else {
@@ -97,7 +93,6 @@ export default function SignUpScreen({ setIsAuthenticated }) {
           token = response.data.token;
         }
 
-        // Save token and user data
         if (token) {
           await ApiService.saveToken(token);
         }

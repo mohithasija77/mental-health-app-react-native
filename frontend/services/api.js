@@ -3,9 +3,7 @@ import Constants from 'expo-constants';
 const { API_BASE_URL } = Constants.expoConfig.extra;
 
 // Configuration
-const AUTH_BASE_URL = `${API_BASE_URL}/api`; // Change this to your server URL
-// For Android emulator use: http://10.0.2.2:5000/api
-// For iOS simulator use: http://localhost:5000/api
+const AUTH_BASE_URL = `${API_BASE_URL}/api`;
 
 class ApiService {
   constructor() {
@@ -118,7 +116,7 @@ class ApiService {
     }
   }
 
-  // Update your saveUserData method in ApiService to handle undefined values
+  // Update saveUserData method in ApiService to handle undefined values
   async saveUserData(userData) {
     try {
       if (!userData) {
@@ -151,7 +149,6 @@ class ApiService {
     }
   }
 
-  // Add this method to your ApiService class
   async checkTodaysCheckin() {
     try {
       const user = await this.getUserData();
@@ -168,7 +165,6 @@ class ApiService {
     }
   }
 
-  // utils/AuthService.js
   async isAuthenticated() {
     try {
       const token = await this.getToken();
@@ -215,7 +211,6 @@ class ApiService {
     }
   }
 
-  // NEW: Verify OTP method
   async verifyOtp(data) {
     try {
       const response = await fetch(`${this.baseURL}/auth/verify-otp`, {
@@ -251,7 +246,6 @@ class ApiService {
     }
   }
 
-  // UPDATED: Reset password now uses email and OTP instead of token
   async resetPassword(data) {
     try {
       const response = await fetch(`${this.baseURL}/auth/reset-password`, {
@@ -282,10 +276,8 @@ class ApiService {
     }
   }
 
-  // FIXED: Google Signup - Use AUTH_BASE_URL consistently
   async googleSignup(googleUserData) {
     try {
-      // FIXED: Use AUTH_BASE_URL instead of API_BASE_URL
       const response = await fetch(`${AUTH_BASE_URL}/auth/google-signup`, {
         method: 'POST',
         headers: {
@@ -311,10 +303,8 @@ class ApiService {
     }
   }
 
-  // FIXED: Google Login - Use AUTH_BASE_URL consistently
   async googleLogin(googleUserData) {
     try {
-      // FIXED: Use AUTH_BASE_URL instead of API_BASE_URL
       const response = await fetch(`${AUTH_BASE_URL}/auth/google-login`, {
         method: 'POST',
         headers: {
@@ -340,5 +330,5 @@ class ApiService {
     }
   }
 }
-// Export singleton instance
+
 export default new ApiService();

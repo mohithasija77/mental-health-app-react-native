@@ -107,61 +107,6 @@ export default function AIAnalysisHomescreen() {
     />
   );
 
-  const ArtisticIllustration = ({ category, isSelected }) => {
-    const animations = {
-      general: (
-        <div className="relative mx-auto mb-4 h-24 w-24">
-          <div
-            className={`absolute inset-0 rounded-full bg-gradient-to-br from-violet-200 to-purple-300 ${isSelected ? 'animate-pulse' : ''}`}>
-            <div className="absolute left-3 top-3 h-4 w-4 rounded-full bg-white opacity-80"></div>
-            <div className="absolute bottom-4 right-4 h-3 w-3 rounded-full bg-white opacity-60"></div>
-          </div>
-          <Brain className="absolute left-1/2 top-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2 transform text-violet-600" />
-          <div className="absolute -right-2 -top-2 text-xl">✨</div>
-        </div>
-      ),
-      sentiment: (
-        <div className="relative mx-auto mb-4 h-24 w-24">
-          <div
-            className={`absolute inset-0 rotate-12 transform rounded-2xl bg-gradient-to-br from-rose-200 to-pink-300 ${isSelected ? 'animate-bounce' : ''}`}></div>
-          <div className="absolute inset-2 flex items-center justify-center rounded-xl bg-gradient-to-br from-rose-100 to-pink-200">
-            <Heart className="h-8 w-8 fill-current text-rose-500" />
-          </div>
-          <div className="absolute -left-1 -top-1 text-lg">💫</div>
-          <div className="absolute -bottom-1 -right-1 text-lg">🌸</div>
-        </div>
-      ),
-      trends: (
-        <div className="relative mx-auto mb-4 h-24 w-24">
-          <div className="absolute inset-0 -rotate-6 transform rounded-lg bg-gradient-to-br from-emerald-200 to-teal-300">
-            <div className="absolute inset-2 flex items-center justify-center rounded-md bg-gradient-to-br from-emerald-100 to-teal-200">
-              <TrendingUp
-                className={`h-8 w-8 text-emerald-600 ${isSelected ? 'animate-pulse' : ''}`}
-              />
-            </div>
-          </div>
-          <div className="absolute -top-2 left-1/2 -translate-x-1/2 transform text-xl">📊</div>
-        </div>
-      ),
-      insights: (
-        <div className="relative mx-auto mb-4 h-24 w-24">
-          <div
-            className={`absolute inset-0 rounded-full bg-gradient-to-br from-amber-200 to-orange-300 ${isSelected ? 'animate-spin' : ''}`}
-            style={{ animationDuration: '8s' }}>
-            <div className="absolute left-1/2 top-2 h-2 w-2 -translate-x-1/2 transform rounded-full bg-white"></div>
-            <div className="absolute bottom-2 left-1/2 h-2 w-2 -translate-x-1/2 transform rounded-full bg-white"></div>
-            <div className="absolute left-2 top-1/2 h-2 w-2 -translate-y-1/2 transform rounded-full bg-white"></div>
-            <div className="absolute right-2 top-1/2 h-2 w-2 -translate-y-1/2 transform rounded-full bg-white"></div>
-          </div>
-          <Sparkles className="absolute left-1/2 top-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2 transform text-amber-600" />
-          <div className="absolute -right-2 -top-2 text-xl">💡</div>
-        </div>
-      ),
-    };
-
-    return animations[category.id] || animations.general;
-  };
-
   return (
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-slate-50 via-rose-50 to-blue-50">
       <style>{`

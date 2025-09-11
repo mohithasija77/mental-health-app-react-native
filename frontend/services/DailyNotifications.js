@@ -1,9 +1,7 @@
-// utils/DailyNotifications.js
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
-import { navigationRef } from './NavigationRef'; // ✅ Import the ref
+import { navigationRef } from './NavigationRef';
 
-// Configure how notifications are handled
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
@@ -12,7 +10,6 @@ Notifications.setNotificationHandler({
   }),
 });
 
-// ✅ Handle notification tap
 export const handleNotificationResponse = (response) => {
   const data = response.notification.request.content.data;
 
@@ -21,7 +18,6 @@ export const handleNotificationResponse = (response) => {
   }
 };
 
-// ✅ Request permissions
 export const requestNotificationPermissions = async () => {
   if (Device.isDevice) {
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
@@ -44,7 +40,7 @@ export const requestNotificationPermissions = async () => {
   }
 };
 
-// ✅ Schedule daily notification at 1:00 PM (adjust as needed)
+//Schedule daily notification at 1:00 PM
 export const scheduleDailyReminder = async () => {
   const hasPermission = await requestNotificationPermissions();
   if (!hasPermission) return;
@@ -75,7 +71,7 @@ export const scheduleDailyReminder = async () => {
   console.log('✅ Daily reminder scheduled for 1:00 PM');
 };
 
-// ✅ Cancel all notifications
+//Cancel all notifications
 export const cancelDailyReminder = async () => {
   await Notifications.cancelAllScheduledNotificationsAsync();
   console.log('Daily reminders cancelled');

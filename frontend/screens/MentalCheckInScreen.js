@@ -118,7 +118,7 @@ export default function MentalCheckInScreen() {
       const userData = await AsyncStorage.getItem('userData');
       const user = userData ? JSON.parse(userData) : null;
 
-      // Check for _id since your user object uses MongoDB's _id field
+      // Check for _id since user object uses MongoDB's _id field
       if (!user || !user._id) {
         console.error('No authenticated user found');
         console.log('User data:', user); // Debug log to see what's stored
@@ -155,7 +155,6 @@ export default function MentalCheckInScreen() {
     }
   };
 
-  // ✅ CHECK ON COMPONENT MOUNT
   useEffect(() => {
     checkTodaysCheckin();
   }, []);
@@ -173,8 +172,6 @@ export default function MentalCheckInScreen() {
       );
       return;
     }
-
-    const testId = 'test-user-123'; // Replace with actual user ID
 
     const userData = await AsyncStorage.getItem('userData');
     const user = userData ? JSON.parse(userData) : null;
@@ -199,19 +196,19 @@ export default function MentalCheckInScreen() {
         body: JSON.stringify(payload),
       });
 
-      const data = await response.json(); // ✅ parse once
+      const data = await response.json();
 
       if (response.ok && data.success && data.analysis) {
-        console.log('✅ Success response:', data);
+        console.log('Success response:', data);
         const { analysis } = data;
 
         setHasCheckedInToday(true);
 
         // --- RESET FORM STATES ---
         setFeelingScale(5); // default value
-        setSleepQuality(5); // default value
-        setStressLevel(5); // default value
-        setMood('happy'); // default mood
+        setSleepQuality(5);
+        setStressLevel(5);
+        setMood('happy');
         setRecentEvents('');
         setAdditionalNotes('');
         setIsOpen(false); // close mood dropdown if open
@@ -238,8 +235,8 @@ export default function MentalCheckInScreen() {
           { cancelable: true }
         );
       } else {
-        // ❌ Backend responded with error (status 400 etc)
-        console.error('❌ API error response:', data);
+        //Backend responded with error (status 400 etc)
+        console.error('API error response:', data);
 
         if (data.error === 'Duplicate check-in') {
           Alert.alert(
@@ -251,9 +248,9 @@ export default function MentalCheckInScreen() {
         }
       }
     } catch (error) {
-      console.error('💥 Fetch error:', error);
-      console.error('💥 Error type:', error.name);
-      console.error('💥 Error message:', error.message);
+      console.error('Fetch error:', error);
+      console.error('Error type:', error.name);
+      console.error('Error message:', error.message);
 
       if (error.name === 'TypeError' && error.message.includes('Network request failed')) {
         Alert.alert(
@@ -274,14 +271,13 @@ export default function MentalCheckInScreen() {
     <KeyboardAwareScrollView
       className="flex-1 bg-white"
       contentContainerStyle={{
-        paddingBottom: 150, // More padding for keyboard and footer
+        paddingBottom: 150,
         flexGrow: 1,
       }}
       enableOnAndroid={true}
-      extraScrollHeight={50} // adjust if you want more space above keyboard
+      extraScrollHeight={50}
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}>
-      {/* Fixed Background Wave - reduced height */}
       <Svg height="100" width={width} style={{ position: 'absolute', top: 0 }}>
         <Path d={`M0 80 Q${width / 2} 160, ${width} 80 L${width} 0 L0 0 Z`} fill="#e0f2fe" />
       </Svg>

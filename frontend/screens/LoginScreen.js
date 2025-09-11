@@ -211,7 +211,7 @@ export default function LoginScreen({ setIsAuthenticated }) {
           <GoogleOAuthButton setIsAuthenticated={setIsAuthenticated} mode="login" />
         </View>
       </View>
-      {/* TODO: Meeting with supervisor to confirm questions regarding facebook auth login before Implementing */}
+      {/* Todo: Implement facebook auth after sorting policies and required verification */}
       {/* <FacebookOAuthButton setIsAuthenticated={setIsAuthenticated} /> */}
 
       <View className="mt-6 flex-row justify-center">

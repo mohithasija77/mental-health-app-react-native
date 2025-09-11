@@ -1,8 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const { validateGoogleAuth } = require('../middleware/validation');
-
-// Import controllers and middleware
 const authController = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
 const { validateSignup, validateLogin } = require('../middleware/validation');

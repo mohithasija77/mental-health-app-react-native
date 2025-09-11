@@ -162,7 +162,7 @@ const WeeklySummaryScreen = () => {
       const userData = await AsyncStorage.getItem('userData');
       const user = userData ? JSON.parse(userData) : null;
 
-      // Check for _id since your user object uses MongoDB's _id field
+      // Check for _id since user object uses MongoDB's _id field
       if (!user || !user._id) {
         console.error('No authenticated user found');
         console.log('User data:', user); // Debug log to see what's stored
@@ -182,7 +182,7 @@ const WeeklySummaryScreen = () => {
       );
 
       const data = await response.json();
-      console.log('Check-in response:', data); // Debug log
+      console.log('Check-in response:', data);
 
       if (response.ok) {
         setHasCheckedInToday(data.hasCheckedInToday || false);

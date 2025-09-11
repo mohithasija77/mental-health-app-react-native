@@ -15,24 +15,7 @@ const createMentalHealthPrompt = (userInput) => {
     additionalNotes,
   } = userInput;
 
-  return `As a mental health analysis assistant, please analyze the following user input and provide supportive insights:
-
-User Mental Health Assessment:
-- Overall feeling today (1-10 scale): ${feelingScale}
-- Sleep quality (1-10 scale): ${sleepQuality}
-- Stress level (1-10 scale): ${stressLevel}
-- Current mood: ${mood}
-- Recent significant events: ${recentEvents || 'None mentioned'}
-- Additional notes: ${additionalNotes || 'None provided'}
-
-Please provide:
-1. A brief analysis of their current mental state
-2. Potential areas of concern (if any)
-3. Positive aspects to acknowledge
-4. Gentle suggestions for improvement or coping strategies
-5. When to consider seeking professional help
-
-Keep the response supportive, non-diagnostic, and encouraging. Limit response to 300-400 words.`;
+  return ``;
 };
 
 // Helper function to make OpenAI API request
@@ -88,8 +71,7 @@ const getFullMentalHealthAnalysis = async (userInput) => {
   const messages = [
     {
       role: 'system',
-      content:
-        'You are a supportive mental health assistant. Provide helpful, empathetic responses while being clear that you are not a replacement for professional mental health care. Never provide medical diagnoses.',
+      content: '',
     },
     {
       role: 'user',
@@ -102,13 +84,12 @@ const getFullMentalHealthAnalysis = async (userInput) => {
 
 // Service function for quick mood analysis
 const getQuickMoodAnalysis = async (mood, feelingScale) => {
-  const quickPrompt = `User reports feeling "${mood}" with an overall feeling scale of ${feelingScale}/10. Provide a brief, encouraging response (2-3 sentences) and one simple suggestion for their day.`;
+  const quickPrompt = ``;
 
   const messages = [
     {
       role: 'system',
-      content:
-        'You are a supportive assistant providing quick, encouraging responses to mood check-ins.',
+      content: '',
     },
     {
       role: 'user',
@@ -124,8 +105,7 @@ const getCustomAnalysis = async (customPrompt, systemMessage = null) => {
   const messages = [
     {
       role: 'system',
-      content:
-        systemMessage || 'You are a helpful mental health support assistant.',
+      content: systemMessage || '',
     },
     {
       role: 'user',

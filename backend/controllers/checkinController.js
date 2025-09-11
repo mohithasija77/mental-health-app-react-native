@@ -11,8 +11,6 @@ const checkinController = {
   // Main data analysis endpoint - focuses on trends and patterns
   analyzeMentalHealth: async (req, res) => {
     try {
-      console.log('Wellness data analysis request:', req.body);
-
       const {
         userId,
         feelingScale,
@@ -170,7 +168,7 @@ const checkinController = {
     }
   },
 
-  // Get user's check-in history
+  // Get user's check-in history(Not using anywhere for now)
   getCheckinHistory: async (req, res) => {
     try {
       const { userId } = req.params;
@@ -438,7 +436,7 @@ function validateCheckInData(data) {
   return null;
 }
 
-// Calculate daily wellness score (renamed from wellness score)
+// Calculate daily wellness score
 function calculateDailyScore({ feelingScale, sleepQuality, stressLevel }) {
   // Invert stress level (higher stress = lower score)
   const invertedStress = 11 - stressLevel;

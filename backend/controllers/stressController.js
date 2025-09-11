@@ -1,5 +1,3 @@
-// File: controllers/stressController.js
-
 const Stress = require('../models/Stress');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
@@ -107,8 +105,8 @@ const analyzeStress = async (req, res) => {
     return res.status(200).json({
       success: true,
       analysis: {
-        stressScore, // numeric 0-10
-        stressLevel: stressLevelLabel, // human label e.g., "Moderate"
+        stressScore,
+        stressLevel: stressLevelLabel,
         summary: parsed.summary,
         trends: parsed.trends || [],
         timestamp: new Date(),
@@ -158,8 +156,8 @@ const calculateStressScore = (answers) => {
   });
 
   if (totalWeight === 0) return 0;
-  const avgNormalized = totalScore / totalWeight; // 0..1
-  const scaled = Math.round(avgNormalized * 10); // 0..10
+  const avgNormalized = totalScore / totalWeight;
+  const scaled = Math.round(avgNormalized * 10);
   return scaled;
 };
 
@@ -282,11 +280,4 @@ const parseAIAnalysis = (aiResponse) => {
 // export
 module.exports = {
   analyzeStress,
-  // other handlers can stay as before:
-  getStressHistory: async (req, res) => {
-    /* unchanged or your existing implementation */
-  },
-  getStressInsights: async (req, res) => {
-    /* unchanged or your existing implementation */
-  },
 };

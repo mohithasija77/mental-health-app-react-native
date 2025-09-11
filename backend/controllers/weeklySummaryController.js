@@ -123,15 +123,11 @@ const weeklySummaryController = {
       endOfWeek.setDate(endOfWeek.getDate() + 6);
       endOfWeek.setHours(23, 59, 59, 999);
 
-      console.log('📅 Fetching data from:', startOfWeek, 'to', endOfWeek);
-
       // Step 2: Get current week's check-in data
       const weeklyData = await DailyCheckinModel.find({
         userId,
         createdAt: { $gte: startOfWeek, $lte: endOfWeek },
       }).sort({ createdAt: 1 });
-
-      console.log(`✅ Found ${weeklyData.length} check-in(s)`);
 
       // Step 3: Check if summary exists (always use normalized startOfWeek)
       let existingSummary = await WeeklySummary.findOne({
@@ -150,7 +146,7 @@ const weeklySummaryController = {
 
         if (currentDataCount !== savedDataCount) {
           console.log(
-            `📊 Data count changed: ${savedDataCount} → ${currentDataCount}. Updating summary...`
+            `Data count changed: ${savedDataCount} → ${currentDataCount}. Updating summary...`
           );
           needsUpdate = true;
         } else {
@@ -163,13 +159,13 @@ const weeklySummaryController = {
           );
 
           if (hasNewerEntries) {
-            console.log('📊 Found newer entries. Updating summary...');
+            console.log('Found newer entries. Updating summary...');
             needsUpdate = true;
           }
         }
 
         if (!needsUpdate) {
-          console.log('✅ Returning existing weekly summary from DB');
+          console.log('Returning existing weekly summary from DB');
           return res.json({
             success: true,
             weeklySummary: {
@@ -184,7 +180,7 @@ const weeklySummaryController = {
       if (weeklyData.length === 0) {
         if (existingSummary) {
           await WeeklySummary.findByIdAndDelete(existingSummary._id);
-          console.log('🗑️ Deleted existing empty weekly summary');
+          console.log('Deleted existing empty weekly summary');
         }
 
         return res.json({
@@ -209,7 +205,7 @@ const weeklySummaryController = {
       }
 
       // Step 5: Compute analytics & AI insights
-      console.log(`📊 Computing analytics for ${weeklyData.length} entries...`);
+      console.log(`Computing analytics for ${weeklyData.length} entries...`);
       const analytics = calculateWeeklyAnalytics(weeklyData);
       const aiInsights = await generateWeeklyAIInsights(weeklyData, analytics);
 
@@ -264,7 +260,7 @@ const weeklySummaryController = {
         );
 
         const action = existingSummary ? 'Updated' : 'Created';
-        console.log(`✅ ${action} weekly summary`);
+        console.log(`${action} weekly summary`);
 
         return res.json({
           success: true,
@@ -276,9 +272,7 @@ const weeklySummaryController = {
       } catch (updateError) {
         // Handle duplicate key error specifically
         if (updateError.code === 11000) {
-          console.log(
-            '🔄 Duplicate key detected, retrying with update only...'
-          );
+          console.log('Duplicate key detected, retrying with update only...');
 
           // Retry with update only (no upsert)
           const updatedSummary = await WeeklySummary.findOneAndUpdate(
@@ -296,7 +290,7 @@ const weeklySummaryController = {
           );
 
           if (updatedSummary) {
-            console.log('✅ Updated weekly summary after retry');
+            console.log('Updated weekly summary after retry');
             return res.json({
               success: true,
               weeklySummary: {
@@ -312,7 +306,7 @@ const weeklySummaryController = {
         throw updateError; // Re-throw other errors
       }
     } catch (error) {
-      console.error('❌ Error generating weekly summary:', error);
+      console.error('Error generating weekly summary:', error);
       res.status(500).json({
         success: false,
         error: 'Failed to generate weekly summary',
@@ -322,6 +316,7 @@ const weeklySummaryController = {
   },
 
   // Quick mood check endpoint
+  // Might work on this in future
   quickMoodCheck: async (req, res) => {
     try {
       const { mood, intensity, trigger, needsSupport } = req.body;
@@ -382,7 +377,7 @@ const weeklySummaryController = {
   },
 };
 
-// Calculate weekly analytics (same as before)
+// Calculate weekly analytics
 function calculateWeeklyAnalytics(weeklyData) {
   // Add safety check
   if (!weeklyData || !Array.isArray(weeklyData) || weeklyData.length === 0) {
@@ -466,7 +461,7 @@ function calculateWeeklyAnalytics(weeklyData) {
     keyPatterns,
   };
 }
-// Generate AI insights for weekly summary (same as before)
+// Generate AI insights for weekly summary
 async function generateWeeklyAIInsights(weeklyData, analytics) {
   try {
     const prompt = `
@@ -509,7 +504,7 @@ async function generateWeeklyAIInsights(weeklyData, analytics) {
   }
 }
 
-// Generate quick mood response (same as before)
+// Generate quick mood response
 function generateQuickMoodResponse(mood, intensity, trigger, needsSupport) {
   let response = `Thank you for checking in. I see you're feeling ${mood} at a ${intensity}/10 intensity. `;
 

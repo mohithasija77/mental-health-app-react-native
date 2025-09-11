@@ -9,22 +9,14 @@ WebBrowser.maybeCompleteAuthSession();
 export default function FacebookOAuthButton() {
   const redirectUri = 'https://auth.expo.io/@mohithasija/mental-health-slug';
 
-  console.log('Redirect URI:', redirectUri);
-
   const [user, setUser] = useState(null);
   const [request, response, promptAsync] = Facebook.useAuthRequest({
-    clientId: Constants.expoConfig.extra.FACEBOOK_APP_ID, // change this for yours
+    clientId: Constants.expoConfig.extra.FACEBOOK_APP_ID,
     redirectUri,
     scopes: ['public_profile', 'email'],
   });
 
   useEffect(() => {
-    console.log('=== AUTH RESPONSE DEBUG ===');
-    console.log('Response exists:', !!response);
-    console.log('response', response);
-    console.log('Response type:', response?.type);
-    console.log('Full response:', JSON.stringify(response, null, 2));
-
     if (response) {
       if (response.type === 'success') {
         console.log('Success! Authentication object:', response.authentication);
@@ -34,7 +26,6 @@ export default function FacebookOAuthButton() {
             response.authentication.accessToken.substring(0, 20) + '...'
           );
 
-          // ADD THIS BACK - Fetch user data
           (async () => {
             try {
               const userInfoResponse = await fetch(
@@ -69,7 +60,6 @@ export default function FacebookOAuthButton() {
       const result = await promptAsync();
       console.log('promptAsync returned:', JSON.stringify(result, null, 2));
 
-      // This should show us what we're getting back
       if (result) {
         console.log('Result type:', result.type);
         if (result.type === 'success') {
