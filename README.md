@@ -124,3 +124,14 @@ Feel free to suggest or contribute ideas via issues or pull requests. 🙂
 This app is designed for self-reflection and awareness purposes only. It identifies patterns and trends in your data but does not provide clinical recommendations or replace professional mental health care. If you're experiencing mental health concerns, please consult with a qualified healthcare provider.
 
 ## Note: This application is for educational and personal wellness tracking purposes. Always seek professional help for mental health concerns.
+
+
+## Screenshots
+<img width="403" height="803" alt="Screenshot 2025-10-21 at 14 39 18" src="https://github.com/user-attachments/assets/12d0db80-bbbf-410b-8d6d-2180f3740bdf" />
+<img width="749" height="741" alt="Screenshot 2025-10-21 at 14 40 14" src="https://github.com/user-attachments/assets/6f128601-4eef-4882-86d9-7c9813d9964c" />
+<img width="822" height="834" alt="Screenshot 2025-10-21 at 14 40 30" src="https://github.com/user-attachments/assets/a0239fd5-b232-4836-8dfe-070295e7e9f2" />
+<img width="816" height="836" alt="Screenshot 2025-10-21 at 14 40 49" src="https://github.com/user-attachments/assets/e355c536-032d-4db8-af02-91b6c0efbb14" />
+<img width="821" height="835" alt="Screenshot 2025-10-21 at 14 41 04" src="https://github.com/user-attachments/assets/4e2d0ff5-1787-4171-8fef-a7e87fc7f1a4" />
+<img width="400" height="836" alt="Screenshot 2025-10-21 at 14 41 24" src="https://github.com/user-attachments/assets/a6192b68-4923-4bcd-9491-49c62fcdec06" />
+
+
