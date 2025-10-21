@@ -1,30 +1,126 @@
-# 🧠 Mental Health Check-In App (WIP)
+# 🧠 Mental Health Check-In App
 
-This is an actively developed mobile application focused on helping users reflect on their emotional well-being. Users can type how they feel, and the app will provide thoughtful responses powered by OpenAI's GPT API.
+A mobile application designed to help users reflect on their emotional well-being through daily check-ins, pattern recognition, and AI-powered insights. Users can track their mental health indicators, and the app provides thoughtful trend analysis powered by AI.
 
-## 🚧 Status
-This project is currently a **work in progress**. Features and UI are being added iteratively.
+Note: The app currently focuses on identifying trends and patterns in your data. It does not provide clinical recommendations or medical advice.
 
 ## 🔧 Tech Stack
 
 - **Frontend**: React Native (with Tailwind CSS & Lottie animations)
 - **Backend**: Node.js, Express.js
-- **AI Integration**: OpenAI GPT API
+- **AI Integration**: Gemini API
+- **Database**: MongoDB
+- **Authentication**: OAuth 2.0 (Google)
 
-## ✨ Planned Features
+## ✨Features
 
-- Mood tracking with visual insights
-- Daily check-in prompts
-- AI-based feedback on emotional states
-- User-friendly, calming interface
+- Daily Mental Check-In – Record indicators such as sleep quality, stress levels, mood/feeling scale, and recent events
+- Weekly Summary – Aggregates seven days of data and presents AI-generated insights to highlight trends and recurring patterns
+- Stress Detector – Log additional indicators like appetite, relationships, energy levels, and feelings of being overwhelmed to spot stress-related patterns
+- Mental Health Facts – Access evidence-based wellbeing information for educational purposes
+- Calming Interface – Light color palettes create a non-intrusive, supportive environment
+- Reminders & Notifications – Encourages consistent usage and regular check-ins
+- Data Export – Export your weekly data for personal records
+
+## 📱 User Manual
+
+A short, step-by-step guide for end users:
+
+1. Run the app
+2. Create an account or sign in with Google
+3. Complete your daily check-in
+4. Navigate to weekly summary for insights
+5. Use the stress detector for focused assessment
+6. Explore mental health facts for learning
+7. Export weekly data if needed
 
 ## 🚀 Getting Started
 
+### Prerequisites
+
+- Node.js installed
+- MongoDB setup
+- Expo CLI for React Native development
+
+### Quick Setup
+
 1. Clone the repo
 2. Run `npm install` in both `frontend/` and `backend/`
-3. Use `nodemon` for backend and Expo Go for frontend
-4. Add your OpenAI API key to a `.env` file (instructions coming soon)
+3. Configure environment variables (see detailed instructions below)
+4. Use `nodemon` for backend and Expo Go for frontend
 
----
+## 📋 Installation Instructions
+
+- **frontend/** - React Native mobile app
+- **backend/** - Node.js server
+
+### Frontend Setup
+
+1. Navigate to the frontend folder
+2. Install dependencies:
+   ```
+   npm install
+   ```
+3. **Configure environment variables:**
+   - API keys for OAuth 2.0 (Google)
+   - API_BASE_URL pointing to backend development IP
+4. Start the development server:
+   ```
+   npm start
+   ```
+5. **Running on different platforms:**
+   - For Expo development: `npx expo start`
+   - For iOS simulator: `npx expo run:ios`
+   - For Android emulator/device: `npx expo run:android`
+
+### Backend Setup
+
+1. Navigate to the backend folder
+2. Install dependencies:
+   ```
+   npm install
+   ```
+3. **Configure environment variables:**
+   - MongoDB connection string
+   - API keys for Gemini
+   - JWT_SECRET
+   - EMAIL_FROM & EMAIL_PASSWORD
+4. Start the backend server:
+   ```
+   npm start
+   ```
+   Or for development with auto-reload:
+   ```
+   nodemon
+   ```
+
+## 🔐 Environment Variables
+
+### Frontend (.env)
+
+```
+GOOGLE_IOS_CLIENT_ID=your_google_ios_client_id
+GOOGLE_ANDROID_CLIENT_ID=your_google_android_client_id
+GOOGLE_WEB_CLIENT_ID=your_google_web_id
+API_BASE_URL=http://your_backend_ip:port
+```
+
+### Backend (.env)
+
+```
+MONGODB_URI=your_mongodb_connection_string
+GEMINI_API_KEY=your_gemini_api_key
+JWT_SECRET=your_jwt_secret
+EMAIL_FROM=your_email_address
+EMAIL_PASSWORD=your_email_password
+```
+
+## 🤝 Contributing
 
 Feel free to suggest or contribute ideas via issues or pull requests. 🙂
+
+## ⚠️ Disclaimer
+
+This app is designed for self-reflection and awareness purposes only. It identifies patterns and trends in your data but does not provide clinical recommendations or replace professional mental health care. If you're experiencing mental health concerns, please consult with a qualified healthcare provider.
+
+## Note: This application is for educational and personal wellness tracking purposes. Always seek professional help for mental health concerns.

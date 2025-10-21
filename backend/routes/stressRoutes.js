@@ -1,12 +1,6 @@
-// File: routes/stressRoutes.js
-
 const express = require('express');
 const router = express.Router();
-const {
-  analyzeStress,
-  getStressHistory,
-  getStressInsights,
-} = require('../controllers/stressController');
+const { analyzeStress } = require('../controllers/stressController');
 
 const rateLimit = require('express-rate-limit');
 
@@ -24,11 +18,5 @@ const stressAnalysisLimit = rateLimit({
 
 // POST /api/stress/analyze - Analyze stress levels
 router.post('/analyze', stressAnalysisLimit, analyzeStress);
-
-// GET /api/stress/history - Get stress history
-router.get('/history', getStressHistory);
-
-// GET /api/stress/insights - Get stress insights and trends
-router.get('/insights', getStressInsights);
 
 module.exports = router;
